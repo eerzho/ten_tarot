@@ -1,0 +1,15 @@
+FROM golang:1.22
+
+WORKDIR /http_server
+
+COPY go.mod go.sum ./
+RUN go mod download
+RUN go install github.com/swaggo/swag/cmd/swag@latest
+
+COPY ./cmd/http_server ./cmd/http_server
+COPY ./config ./config
+COPY ./internal ./internal
+COPY ./pkg ./pkg
+COPY ./docs ./docs
+
+CMD ["sh", "-c", "while :; do sleep 1; done"]

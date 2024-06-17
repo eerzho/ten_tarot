@@ -1,0 +1,121 @@
+basePath: /api/v1
+definitions:
+  entity.TGMessage:
+    properties:
+      answer:
+        type: string
+      chat_id:
+        type: string
+      file:
+        type: string
+      id:
+        type: string
+      text:
+        type: string
+    type: object
+  entity.TGUser:
+    properties:
+      chat_id:
+        type: string
+      id:
+        type: string
+      username:
+        type: string
+    type: object
+  v1.errorResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  v1.successResponse:
+    properties:
+      data: {}
+    type: object
+info:
+  contact: {}
+  title: Event manager tg bot api
+  version: "1.0"
+paths:
+  /tg-messages:
+    get:
+      consumes:
+      - application/json
+      description: Show all messages list
+      parameters:
+      - description: ChatID
+        in: query
+        name: chat_id
+        type: string
+      - description: Page
+        in: query
+        name: page
+        type: integer
+      - description: Count
+        in: query
+        name: count
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/v1.successResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/entity.TGMessage'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/v1.errorResponse'
+      summary: Show messages
+      tags:
+      - tg-messages
+  /tg-users:
+    get:
+      consumes:
+      - application/json
+      description: Show all users list
+      parameters:
+      - description: Username
+        in: query
+        name: username
+        type: string
+      - description: ChatID
+        in: query
+        name: chat_id
+        type: string
+      - description: Page
+        in: query
+        name: page
+        type: integer
+      - description: Count
+        in: query
+        name: count
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/v1.successResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/entity.TGUser'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/v1.errorResponse'
+      summary: Show users
+      tags:
+      - tg-users
+swagger: "2.0"

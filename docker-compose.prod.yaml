@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  telegram_bot:
+    build:
+      context: .
+      dockerfile: docker/telegram_bot/Dockerfile.prod
+
+  http_server:
+    build:
+      context: .
+      dockerfile: docker/http_server/Dockerfile.prod

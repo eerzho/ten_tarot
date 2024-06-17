@@ -1,0 +1,20 @@
+FROM golang:1.22-alpine AS builder
+
+WORKDIR /http_server
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY ./cmd/http_server ./cmd/http_server
+COPY ./config ./config
+COPY ./internal ./internal
+COPY ./pkg ./pkg
+COPY ./docs ./docs
+
+RUN go build -o /app/http_server ./cmd/http_server/main.go
+
+FROM alpine:latest
+
+COPY --from=builder /app/http_server /app/http_server
+
+CMD ["/app/http_server"]
