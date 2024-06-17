@@ -33,7 +33,7 @@ definitions:
     type: object
 info:
   contact: {}
-  title: Event manager tg bot api
+  title: Ten tarot tg bot api
   version: "1.0"
 paths:
   /tg-messages:

@@ -2,12 +2,10 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/eerzho/event_manager/pkg/logger"
 	"github.com/eerzho/ten_tarot/internal/entity"
-	"github.com/eerzho/ten_tarot/internal/failure"
 )
 
 type (
@@ -17,12 +15,9 @@ type (
 	}
 
 	TGMessage struct {
-		l                     logger.Logger
-		repo                  TGMessageRepo
-		tgUserService         *TGUser
-		eventService          *Event
-		googleCalendarService *GoogleCalendar
-		appleCalendar         *AppleCalendar
+		l             logger.Logger
+		repo          TGMessageRepo
+		tgUserService *TGUser
 	}
 )
 
@@ -30,17 +25,11 @@ func NewTGMessage(
 	l logger.Logger,
 	repo TGMessageRepo,
 	tgUserService *TGUser,
-	eventService *Event,
-	googleCalendarService *GoogleCalendar,
-	appleCalendar *AppleCalendar,
 ) *TGMessage {
 	return &TGMessage{
-		l:                     l,
-		repo:                  repo,
-		tgUserService:         tgUserService,
-		eventService:          eventService,
-		googleCalendarService: googleCalendarService,
-		appleCalendar:         appleCalendar,
+		l:             l,
+		repo:          repo,
+		tgUserService: tgUserService,
 	}
 }
 
@@ -66,26 +55,6 @@ func (t *TGMessage) Text(ctx context.Context, message *entity.TGMessage) error {
 			}
 		}
 	}()
-
-	var event entity.Event
-	if err := t.eventService.CreateFromText(ctx, &event, message.Text); err != nil {
-		if errors.Is(err, failure.ErrValidation) && event.Message != "" {
-			message.Answer = event.Message
-			return nil
-		}
-		t.l.Error(fmt.Errorf("%s: %w", op, err))
-		return fmt.Errorf("%s: %w", op, err)
-	}
-
-	url := t.googleCalendarService.CreateUrl(ctx, &event)
-	message.Answer = "[Google Calendar](" + url + ")"
-
-	file, err := t.appleCalendar.CreateFile(ctx, &event)
-	if err != nil {
-		t.l.Error(fmt.Errorf("%s: %w", op, err))
-		return fmt.Errorf("%s: %w", op, err)
-	}
-	message.File = file
 
 	return nil
 }

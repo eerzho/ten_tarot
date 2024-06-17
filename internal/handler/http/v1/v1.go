@@ -11,7 +11,7 @@ import (
 
 // NewHandler -.
 // Swagger spec:
-// @Title       Event manager tg bot api
+// @Title       Ten tarot tg bot api
 // @Version     1.0
 // @BasePath    /api/v1
 func NewHandler(l logger.Logger, router *gin.Engine, tgUserService *service.TGUser, tgMessageService *service.TGMessage) {
