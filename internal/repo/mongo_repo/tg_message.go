@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/eerzho/event_manager/internal/entity"
 	"github.com/eerzho/event_manager/pkg/mongo"
+	"github.com/eerzho/ten_tarot/internal/entity"
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"

@@ -5,10 +5,10 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/eerzho/event_manager/config"
-	"github.com/eerzho/event_manager/internal/handler/http/v1"
-	"github.com/eerzho/event_manager/internal/service"
 	"github.com/eerzho/event_manager/pkg/logger"
+	"github.com/eerzho/ten_tarot/config"
+	"github.com/eerzho/ten_tarot/internal/handler/http/v1"
+	"github.com/eerzho/ten_tarot/internal/service"
 	"github.com/gin-gonic/gin"
 )
 

@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/eerzho/event_manager/internal/entity"
+	"github.com/eerzho/ten_tarot/internal/entity"
 )
 
 type AppleCalendar struct {

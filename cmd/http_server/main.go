@@ -8,12 +8,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/eerzho/event_manager/config"
-	"github.com/eerzho/event_manager/internal/app/http"
-	"github.com/eerzho/event_manager/internal/repo/mongo_repo"
-	"github.com/eerzho/event_manager/internal/service"
 	"github.com/eerzho/event_manager/pkg/logger"
 	"github.com/eerzho/event_manager/pkg/mongo"
+	"github.com/eerzho/ten_tarot/config"
+	"github.com/eerzho/ten_tarot/internal/app/http"
+	"github.com/eerzho/ten_tarot/internal/repo/mongo_repo"
+	"github.com/eerzho/ten_tarot/internal/service"
 )
 
 func main() {

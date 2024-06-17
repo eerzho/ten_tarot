@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/eerzho/event_manager/internal/failure"
+	"github.com/eerzho/ten_tarot/internal/failure"
 	"github.com/gin-gonic/gin"
 )
 

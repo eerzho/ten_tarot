@@ -1,9 +1,9 @@
 package v1
 
 import (
-	_ "github.com/eerzho/event_manager/docs"
-	"github.com/eerzho/event_manager/internal/service"
 	"github.com/eerzho/event_manager/pkg/logger"
+	_ "github.com/eerzho/ten_tarot/docs"
+	"github.com/eerzho/ten_tarot/internal/service"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"

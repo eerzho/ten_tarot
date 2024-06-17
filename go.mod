@@ -1,4 +1,4 @@
-module github.com/eerzho/event_manager
+module github.com/eerzho/ten_tarot
 
 go 1.22.3
 
@@ -24,6 +24,7 @@ require (
 	github.com/bytedance/sonic/loader v0.1.1 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
 	github.com/cloudwego/iasm v0.2.0 // indirect
+	github.com/eerzho/event_manager v0.0.0-20240617163952-6295283f63e2 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.4 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect

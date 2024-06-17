@@ -5,10 +5,10 @@ import (
 	"log"
 	"strings"
 
-	"github.com/eerzho/event_manager/config"
-	v1 "github.com/eerzho/event_manager/internal/handler/telegram/v1"
-	"github.com/eerzho/event_manager/internal/service"
 	"github.com/eerzho/event_manager/pkg/logger"
+	"github.com/eerzho/ten_tarot/config"
+	v1 "github.com/eerzho/ten_tarot/internal/handler/telegram/v1"
+	"github.com/eerzho/ten_tarot/internal/service"
 	"gopkg.in/telebot.v3"
 )
 
@@ -18,7 +18,7 @@ type Bot struct {
 }
 
 func New(l logger.Logger, cfg *config.Config, tgUserService *service.TGUser, tgMessageService *service.TGMessage) (*Bot, error) {
-	url := fmt.Sprintf("%s/event-manager/wb", strings.Trim(cfg.Telegram.Domain, "/"))
+	url := fmt.Sprintf("%s/ten-tarot/wb", strings.Trim(cfg.Telegram.Domain, "/"))
 	settings := telebot.Settings{
 		Token: cfg.Telegram.Token,
 		Poller: &telebot.Webhook{

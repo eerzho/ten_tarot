@@ -8,6 +8,5 @@ RUN go mod download
 COPY ./cmd/telegram_bot ./cmd/telegram_bot
 COPY ./config ./config
 COPY ./internal ./internal
-COPY ./pkg ./pkg
 
 CMD ["sh", "-c", "while :; do sleep 1; done"]

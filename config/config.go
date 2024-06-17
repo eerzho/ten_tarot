@@ -33,7 +33,7 @@ type (
 
 	Mongo struct {
 		URL string `env:"MONGO_URL" env-required:"true"`
-		DB  string `env:"MONGO_DB" env-default:"event_manager"`
+		DB  string `env:"MONGO_DB" env-required:"true"`
 	}
 
 	Google struct {

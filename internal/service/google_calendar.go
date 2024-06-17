@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/eerzho/event_manager/internal/entity"
+	"github.com/eerzho/ten_tarot/internal/entity"
 )
 
 type GoogleCalendar struct {
