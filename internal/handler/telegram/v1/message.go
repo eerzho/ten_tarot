@@ -42,6 +42,8 @@ func (m *message) text(ctx telebot.Context) error {
 		m.l.Error(fmt.Errorf("%s: %w", op, err))
 	}
 
+	_ = ctx.Send("*происходит магия*")
+
 	msg := entity.TGMessage{
 		Text:   ctx.Message().Text,
 		ChatID: chatID,

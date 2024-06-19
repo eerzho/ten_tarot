@@ -36,7 +36,9 @@ func main() {
 
 	// service
 	tgUserService := service.NewTGUser(l, tgUserRepo)
-	tgMessageService := service.NewTGMessage(l, tgMessageRepo, tgUserService)
+	cardService := service.NewCard()
+	tarotService := service.NewTarot(cfg.GPT.Token, cfg.GPT.Prompt)
+	tgMessageService := service.NewTGMessage(l, tgMessageRepo, tgUserService, cardService, tarotService)
 
 	// handler
 	telegramBot, err := telegram.New(l, cfg, tgUserService, tgMessageService)

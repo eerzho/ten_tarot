@@ -18,6 +18,8 @@ type (
 		l             logger.Logger
 		repo          TGMessageRepo
 		tgUserService *TGUser
+		cardService   *Card
+		tarotService  *Tarot
 	}
 )
 
@@ -25,11 +27,15 @@ func NewTGMessage(
 	l logger.Logger,
 	repo TGMessageRepo,
 	tgUserService *TGUser,
+	cardService *Card,
+	tarotService *Tarot,
 ) *TGMessage {
 	return &TGMessage{
 		l:             l,
 		repo:          repo,
 		tgUserService: tgUserService,
+		cardService:   cardService,
+		tarotService:  tarotService,
 	}
 }
 
@@ -55,6 +61,14 @@ func (t *TGMessage) Text(ctx context.Context, message *entity.TGMessage) error {
 			}
 		}
 	}()
+
+	hand := t.cardService.Shuffle(ctx, 5)
+	answer, err := t.tarotService.Oracle(ctx, message.Text, hand)
+	if err != nil {
+		t.l.Error(fmt.Errorf("%s: %w", op, err))
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	message.Answer = answer
 
 	return nil
 }

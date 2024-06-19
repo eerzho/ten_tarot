@@ -12,7 +12,6 @@ type (
 		HTTP
 		Telegram
 		Mongo
-		Google
 		GPT
 	}
 
@@ -34,10 +33,6 @@ type (
 	Mongo struct {
 		URL string `env:"MONGO_URL" env-required:"true"`
 		DB  string `env:"MONGO_DB" env-required:"true"`
-	}
-
-	Google struct {
-		CalendarURL string `env:"GOOGLE_CALENDAR_URL" env-required:"true"`
 	}
 
 	GPT struct {
