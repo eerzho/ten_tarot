@@ -1,11 +1,11 @@
 version: '3.8'
 
 services:
-  telegram_bot:
+  ten_tarot_bot:
     build:
       context: .
       dockerfile: docker/telegram_bot/Dockerfile.local
-    container_name: telegram_bot
+    container_name: ten_tarot_bot
     env_file:
       - .env
     ports:
@@ -13,13 +13,13 @@ services:
     volumes:
       - .:/telegram_bot
     depends_on:
-      - mongo
+      - ten_tarot_db
 
-  http_server:
+  ten_tarot_server:
     build:
       context: .
       dockerfile: docker/http_server/Dockerfile.local
-    container_name: http_server
+    container_name: ten_tarot_server
     env_file:
       - .env
     ports:
@@ -27,16 +27,17 @@ services:
     volumes:
       - .:/http_server
     depends_on:
-      - mongo
+      - ten_tarot_db
 
-  mongo:
+  ten_tarot_db:
     image: mongo:latest
-    container_name: mongo
+    container_name: ten_tarot_db
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
     ports:
       - "${MONGO_PORT}:${MONGO_PORT}"
+    command: mongod --port ${MONGO_PORT}
     volumes:
       - mongo_data:/data/db
 
