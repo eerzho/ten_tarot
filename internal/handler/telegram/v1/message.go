@@ -42,7 +42,7 @@ func (m *message) text(ctx telebot.Context) error {
 		m.l.Error(fmt.Errorf("%s: %w", op, err))
 	}
 
-	_ = ctx.Send("*магия*")
+	_ = ctx.Send("✨магия✨")
 
 	msg := entity.TGMessage{
 		Text:   ctx.Message().Text,
