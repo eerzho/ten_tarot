@@ -32,7 +32,7 @@ func (t *TGUser) All(ctx context.Context, username, chatID string, page, count i
 
 	users, err := t.repo.All(ctx, username, chatID, page, count)
 	if err != nil {
-		t.l.Error(fmt.Errorf("%s: %w", op, err))
+		t.l.Debug(fmt.Errorf("%s: %w", op, err))
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
@@ -44,7 +44,7 @@ func (t *TGUser) ByChatID(ctx context.Context, chatID string) (*entity.TGUser, e
 
 	user, err := t.repo.ByChatID(ctx, chatID)
 	if err != nil {
-		t.l.Error(fmt.Errorf("%s: %w", op, err))
+		t.l.Debug(fmt.Errorf("%s: %w", op, err))
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
@@ -56,7 +56,7 @@ func (t *TGUser) Create(ctx context.Context, user *entity.TGUser) error {
 
 	exUser, err := t.ByChatID(ctx, user.ChatID)
 	if err != nil {
-		t.l.Error(fmt.Errorf("%s: %w", op, err))
+		t.l.Debug(fmt.Errorf("%s: %w", op, err))
 		if !errors.Is(err, failure.ErrNotFound) {
 			return fmt.Errorf("%s: %w", op, err)
 		}
@@ -68,7 +68,7 @@ func (t *TGUser) Create(ctx context.Context, user *entity.TGUser) error {
 	}
 
 	if err = t.repo.Create(ctx, user); err != nil {
-		t.l.Error(fmt.Errorf("%s: %w", op, err))
+		t.l.Debug(fmt.Errorf("%s: %w", op, err))
 		return fmt.Errorf("%s: %w", op, err)
 	}
 

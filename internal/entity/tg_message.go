@@ -5,5 +5,4 @@ type TGMessage struct {
 	ChatID string `bson:"chat_id" json:"chat_id"`
 	Text   string `bson:"text" json:"text"`
 	Answer string `bson:"answer,omitempty" json:"answer"`
-	File   string `bson:"file,omitempty" json:"file"`
 }

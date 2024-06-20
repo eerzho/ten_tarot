@@ -37,7 +37,7 @@ func main() {
 	// service
 	tgUserService := service.NewTGUser(l, tgUserRepo)
 	cardService := service.NewCard()
-	tarotService := service.NewTarot(cfg.GPT.Token, cfg.GPT.Prompt)
+	tarotService := service.NewTarot(l, cfg.GPT.Token, cfg.GPT.Prompt)
 	tgMessageService := service.NewTGMessage(l, tgMessageRepo, tgUserService, cardService, tarotService)
 
 	// handler

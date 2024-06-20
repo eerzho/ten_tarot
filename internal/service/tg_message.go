@@ -44,7 +44,7 @@ func (t *TGMessage) All(ctx context.Context, chatID string, page, count int) ([]
 
 	messages, err := t.repo.All(ctx, chatID, page, count)
 	if err != nil {
-		t.l.Error(fmt.Errorf("%s: %w", op, err))
+		t.l.Debug(fmt.Errorf("%s: %w", op, err))
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
@@ -57,7 +57,7 @@ func (t *TGMessage) Text(ctx context.Context, message *entity.TGMessage) error {
 	defer func() {
 		if message.Answer != "" {
 			if err := t.repo.Create(ctx, message); err != nil {
-				t.l.Error(fmt.Errorf("%s: %w", op, err))
+				t.l.Debug(fmt.Errorf("%s: %w", op, err))
 			}
 		}
 	}()
@@ -65,7 +65,7 @@ func (t *TGMessage) Text(ctx context.Context, message *entity.TGMessage) error {
 	hand := t.cardService.Shuffle(ctx, 5)
 	answer, err := t.tarotService.Oracle(ctx, message.Text, hand)
 	if err != nil {
-		t.l.Error(fmt.Errorf("%s: %w", op, err))
+		t.l.Debug(fmt.Errorf("%s: %w", op, err))
 		return fmt.Errorf("%s: %w", op, err)
 	}
 	message.Answer = answer

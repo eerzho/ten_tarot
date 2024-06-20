@@ -42,10 +42,12 @@ type (
 )
 
 func New() (*Config, error) {
+	const op = "./config::New"
+
 	cfg := &Config{}
 
 	if err := cleanenv.ReadEnv(cfg); err != nil {
-		return nil, fmt.Errorf("./config::New: %w", err)
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
 	return cfg, nil

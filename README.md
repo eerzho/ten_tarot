@@ -15,12 +15,12 @@
 
 2. Run the telegram bot:
    ```bash
-   docker compose exec telegram_bot go run ./cmd/telegram_bot
+   docker compose exec ten_tarot_bot go run ./cmd/telegram_bot
    ```
    
 3. Run the http server:
    ```bash
-   docker compose exec http_server go run ./cmd/http_server
+   docker compose exec ten_tarot_server go run ./cmd/http_server
    ```
    
    The HTTP server will be running on the port specified by `HTTP_PORT`, and the Telegram bot will be running on the

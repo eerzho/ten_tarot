@@ -33,7 +33,7 @@ func (m *middleware) rateLimit(next telebot.HandlerFunc) telebot.HandlerFunc {
 
 		if exists {
 			options := &telebot.SendOptions{ReplyTo: ctx.Message()}
-			return ctx.Send("Вы отправляете сообщения слишком часто. Пожалуйста, подождите.", options)
+			return ctx.Send("✨Пожалуйста, подождите✨", options)
 		}
 
 		defer func() {

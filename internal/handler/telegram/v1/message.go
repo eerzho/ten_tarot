@@ -42,7 +42,9 @@ func (m *message) text(ctx telebot.Context) error {
 		m.l.Error(fmt.Errorf("%s: %w", op, err))
 	}
 
-	_ = ctx.Send("✨магия✨")
+	if err := ctx.Send("✨Подождите✨"); err != nil {
+		m.l.Error(fmt.Errorf("%s: %w", op, err))
+	}
 
 	msg := entity.TGMessage{
 		Text:   ctx.Message().Text,
@@ -58,7 +60,7 @@ func (m *message) text(ctx telebot.Context) error {
 			return err
 		}
 	} else {
-		if err := ctx.Send("Что то пошло не так ((("); err != nil {
+		if err := ctx.Send("✨Пожалуйста, повторите попытку позже✨"); err != nil {
 			m.l.Error(fmt.Errorf("%s: %w", op, err))
 			return err
 		}
