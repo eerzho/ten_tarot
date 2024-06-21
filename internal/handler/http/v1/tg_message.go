@@ -48,7 +48,7 @@ func (t *tgMessage) all(ctx *gin.Context) {
 		count = 0
 	}
 
-	messages, err := t.tgMessageService.All(ctx, ctx.Query("chatID"), page, count)
+	messages, err := t.tgMessageService.All(ctx, ctx.Query("chat_id"), page, count)
 	if err != nil {
 		t.l.Error(fmt.Errorf("%s: %w", op, err))
 		errorRsp(ctx, err)
