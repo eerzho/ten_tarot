@@ -11,4 +11,4 @@ COPY ./config ./config
 COPY ./internal ./internal
 COPY ./docs ./docs
 
-CMD ["sh", "-c", "while :; do sleep 1; done"]
+CMD ["go", "run", "./cmd/http_server"]

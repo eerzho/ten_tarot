@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/eerzho/event_manager/pkg/crypter"
 	"github.com/eerzho/event_manager/pkg/logger"
 	"github.com/eerzho/event_manager/pkg/mongo"
 	"github.com/eerzho/ten_tarot/config"
@@ -30,16 +31,17 @@ func main() {
 	}
 	defer mg.Close()
 
-	l := logger.New(cfg.Level)
+	l := logger.New(cfg.Log.Level)
+	c := crypter.New(cfg.Crypter.Key)
 
 	// repo
 	tgUserRepo := mongo_repo.NewTGUser(mg)
-	tgMessageRepo := mongo_repo.NewTGMessage(mg)
+	tgMessageRepo := mongo_repo.NewTGMessage(mg, c)
 
 	// service
 	tgUserService := service.NewTGUser(l, tgUserRepo)
 	cardService := service.NewCard()
-	tarotService := service.NewTarot(l, cfg.GPT.Token, cfg.GPT.Prompt)
+	tarotService := service.NewTarot(l, cfg.Model, cfg.GPT.Token, cfg.GPT.Prompt)
 	tgMessageService := service.NewTGMessage(l, tgMessageRepo, tgUserService, cardService, tarotService)
 
 	// handler

@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/eerzho/event_manager/pkg/mongo"
 	"github.com/eerzho/ten_tarot/internal/entity"
 	"github.com/eerzho/ten_tarot/internal/failure"
-	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	mongoDriver "go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -91,7 +92,8 @@ func (t *TGUser) ByChatID(ctx context.Context, chatID string) (*entity.TGUser, e
 func (t *TGUser) Create(ctx context.Context, user *entity.TGUser) error {
 	const op = "./internal/repo/mongo_repo/tg_user::Create"
 
-	user.ID = uuid.New().String()
+	user.ID = primitive.NewObjectID().Hex()
+	user.CreatedAt = time.Now().Format(time.DateTime)
 
 	result, err := t.DB.Collection(TgUserTable).InsertOne(ctx, user)
 	if err != nil {

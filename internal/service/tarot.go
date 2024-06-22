@@ -12,13 +12,15 @@ import (
 type Tarot struct {
 	l      logger.Logger
 	openai *openai.Client
+	model  string
 	prompt string
 }
 
-func NewTarot(l logger.Logger, token, prompt string) *Tarot {
+func NewTarot(l logger.Logger, model, token, prompt string) *Tarot {
 	return &Tarot{
 		l:      l,
 		openai: openai.NewClient(token),
+		model:  model,
 		prompt: prompt,
 	}
 }
@@ -38,7 +40,7 @@ func (t *Tarot) Oracle(ctx context.Context, question string, hand []entity.Card)
 		},
 	}
 	req := openai.ChatCompletionRequest{
-		Model:    openai.GPT4o,
+		Model:    t.model,
 		Messages: messages,
 	}
 	resp, err := t.openai.CreateChatCompletion(ctx, req)

@@ -9,6 +9,7 @@ import (
 type (
 	Config struct {
 		Log
+		Crypter
 		HTTP
 		Telegram
 		Mongo
@@ -17,6 +18,10 @@ type (
 
 	Log struct {
 		Level string `env:"LOG_LEVEL" env-default:"info"`
+	}
+
+	Crypter struct {
+		Key string `env:"CRYPTER_KEY" env-required:"true"`
 	}
 
 	HTTP struct {
@@ -36,6 +41,7 @@ type (
 	}
 
 	GPT struct {
+		Model  string `env:"GPT_MODEL" env-default:"gpt-3.5-turbo"`
 		Token  string `env:"GPT_TOKEN" env-required:"true"`
 		Prompt string `env:"GPT_PROMPT" env-required:"true"`
 	}

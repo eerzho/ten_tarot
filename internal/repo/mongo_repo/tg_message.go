@@ -3,11 +3,13 @@ package mongo_repo
 import (
 	"context"
 	"fmt"
+	"time"
 
+	"github.com/eerzho/event_manager/pkg/crypter"
 	"github.com/eerzho/event_manager/pkg/mongo"
 	"github.com/eerzho/ten_tarot/internal/entity"
-	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -15,10 +17,11 @@ const TgMessageTable = "tg_messages"
 
 type TGMessage struct {
 	*mongo.Mongo
+	c *crypter.Crypter
 }
 
-func NewTGMessage(m *mongo.Mongo) *TGMessage {
-	return &TGMessage{m}
+func NewTGMessage(m *mongo.Mongo, c *crypter.Crypter) *TGMessage {
+	return &TGMessage{m, c}
 }
 
 func (t *TGMessage) All(ctx context.Context, chatID string, page, count int) ([]entity.TGMessage, error) {
@@ -64,7 +67,17 @@ func (t *TGMessage) All(ctx context.Context, chatID string, page, count int) ([]
 func (t *TGMessage) Create(ctx context.Context, message *entity.TGMessage) error {
 	const op = "./internal/repo/mongo_repo/tg_message::Create"
 
-	message.ID = uuid.New().String()
+	decryptedText := message.Text
+	decryptedAnswer := message.Answer
+	defer func() {
+		message.Text = decryptedText
+		message.Answer = decryptedAnswer
+	}()
+
+	message.ID = primitive.NewObjectID().Hex()
+	message.Text = t.c.Encrypt(decryptedText)
+	message.Answer = t.c.Encrypt(decryptedAnswer)
+	message.CreatedAt = time.Now().Format(time.DateTime)
 
 	result, err := t.DB.Collection(TgMessageTable).InsertOne(ctx, message)
 	if err != nil {

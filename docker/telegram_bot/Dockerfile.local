@@ -9,4 +9,4 @@ COPY ./cmd/telegram_bot ./cmd/telegram_bot
 COPY ./config ./config
 COPY ./internal ./internal
 
-CMD ["sh", "-c", "while :; do sleep 1; done"]
+CMD ["go", "run", "./cmd/telegram_bot"]
