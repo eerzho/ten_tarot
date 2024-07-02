@@ -10,6 +10,7 @@ import (
 
 type (
 	TGMessageRepo interface {
+		CountByDay(ctx context.Context, chatID string) (int, error)
 		All(ctx context.Context, chatID string, page, count int) ([]entity.TGMessage, error)
 		Create(ctx context.Context, message *entity.TGMessage) error
 	}
@@ -37,6 +38,19 @@ func NewTGMessage(
 		cardService:   cardService,
 		tarotService:  tarotService,
 	}
+}
+
+func (t *TGMessage) CountByDay(ctx context.Context, chatID string) (int, error) {
+	const op = "./internal/service.tg_message::CountByDay"
+
+	count, err := t.repo.CountByDay(ctx, chatID)
+	if err != nil {
+		t.l.Debug(fmt.Errorf("%s: %w", op, err))
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+	t.l.Debug("test from service", count)
+
+	return count, nil
 }
 
 func (t *TGMessage) All(ctx context.Context, chatID string, page, count int) ([]entity.TGMessage, error) {

@@ -24,6 +24,25 @@ func NewTGMessage(m *mongo.Mongo, c *crypter.Crypter) *TGMessage {
 	return &TGMessage{m, c}
 }
 
+func (t *TGMessage) CountByDay(ctx context.Context, chatID string) (int, error) {
+	const op = "./internal/repo/mongo_repo/tg_message::CountMessagesByDay"
+
+	startOfDay := time.Now().Truncate(24 * time.Hour)
+	filter := bson.M{
+		"chat_id": chatID,
+		"created_at": bson.M{
+			"$gte": startOfDay.Format(time.DateTime),
+		},
+	}
+
+	count, err := t.DB.Collection(TgMessageTable).CountDocuments(ctx, filter)
+	if err != nil {
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return int(count), nil
+}
+
 func (t *TGMessage) All(ctx context.Context, chatID string, page, count int) ([]entity.TGMessage, error) {
 	const op = "./internal/repo/mongo_repo/tg_user::All"
 

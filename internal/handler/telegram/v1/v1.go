@@ -8,7 +8,7 @@ import (
 
 func NewHandler(l logger.Logger, bot *telebot.Bot, tgUserService *service.TGUser, tgMessageService *service.TGMessage) {
 	// middleware
-	mv := newMiddleware(l)
+	mv := newMiddleware(l, tgMessageService)
 
 	// handler
 	newCommand(l, bot, tgUserService)

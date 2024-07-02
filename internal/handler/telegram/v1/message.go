@@ -24,7 +24,7 @@ func newMessage(l logger.Logger, mv *middleware, bot *telebot.Bot, tgMessageServ
 		tgUserService:    tgUserService,
 	}
 
-	bot.Handle(telebot.OnText, m.text, mv.rateLimit)
+	bot.Handle(telebot.OnText, m.text, mv.rateLimit, mv.dailyLimit)
 
 	return m
 }
