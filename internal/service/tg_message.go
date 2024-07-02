@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/eerzho/event_manager/pkg/logger"
 	"github.com/eerzho/ten_tarot/internal/entity"
@@ -10,7 +11,7 @@ import (
 
 type (
 	TGMessageRepo interface {
-		CountByDay(ctx context.Context, chatID string) (int, error)
+		CountByTime(ctx context.Context, chatID string, st time.Time) (int, error)
 		All(ctx context.Context, chatID string, page, count int) ([]entity.TGMessage, error)
 		Create(ctx context.Context, message *entity.TGMessage) error
 	}
@@ -40,15 +41,14 @@ func NewTGMessage(
 	}
 }
 
-func (t *TGMessage) CountByDay(ctx context.Context, chatID string) (int, error) {
+func (t *TGMessage) CountByTime(ctx context.Context, chatID string, st time.Time) (int, error) {
 	const op = "./internal/service.tg_message::CountByDay"
 
-	count, err := t.repo.CountByDay(ctx, chatID)
+	count, err := t.repo.CountByTime(ctx, chatID, st)
 	if err != nil {
 		t.l.Debug(fmt.Errorf("%s: %w", op, err))
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
-	t.l.Debug("test from service", count)
 
 	return count, nil
 }

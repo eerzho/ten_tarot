@@ -42,7 +42,8 @@ func (m *message) text(ctx telebot.Context) error {
 		m.l.Error(fmt.Errorf("%s: %w", op, err))
 	}
 
-	if err := ctx.Send("✨Подождите✨"); err != nil {
+	opt := &telebot.SendOptions{ReplyTo: ctx.Message(), ParseMode: telebot.ModeMarkdown}
+	if err := ctx.Send("✨Пожалуйста, подождите✨", opt); err != nil {
 		m.l.Error(fmt.Errorf("%s: %w", op, err))
 	}
 
@@ -55,12 +56,12 @@ func (m *message) text(ctx telebot.Context) error {
 	}
 
 	if msg.Answer != "" {
-		if err := ctx.Send(msg.Answer, &telebot.SendOptions{ParseMode: telebot.ModeMarkdown, ReplyTo: ctx.Message()}); err != nil {
+		if err := ctx.Send(msg.Answer, opt); err != nil {
 			m.l.Error(fmt.Errorf("%s: %w", op, err))
 			return err
 		}
 	} else {
-		if err := ctx.Send("✨Пожалуйста, повторите попытку позже✨"); err != nil {
+		if err := ctx.Send("✨Пожалуйста, повторите попытку позже✨", opt); err != nil {
 			m.l.Error(fmt.Errorf("%s: %w", op, err))
 			return err
 		}

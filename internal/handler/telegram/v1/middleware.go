@@ -15,6 +15,7 @@ import (
 type middleware struct {
 	l                logger.Logger
 	mu               sync.Mutex
+	limit            int
 	activeRequest    map[int64]struct{}
 	tgMessageService *service.TGMessage
 }
@@ -22,6 +23,7 @@ type middleware struct {
 func newMiddleware(l logger.Logger, tgMessageService *service.TGMessage) *middleware {
 	return &middleware{
 		l:                l,
+		limit:            10,
 		activeRequest:    make(map[int64]struct{}),
 		tgMessageService: tgMessageService,
 	}
@@ -56,20 +58,18 @@ func (m *middleware) rateLimit(next telebot.HandlerFunc) telebot.HandlerFunc {
 func (m *middleware) dailyLimit(next telebot.HandlerFunc) telebot.HandlerFunc {
 	const op = "./internal/handler/telegram/v1/middleware::dailyLimit"
 	return func(ctx telebot.Context) error {
-		userID := strconv.Itoa(int(ctx.Message().Chat.ID))
-		count, err := m.tgMessageService.CountByDay(context.Background(), userID)
-		m.l.Debug("count", count)
+		chatID := strconv.Itoa(int(ctx.Message().Chat.ID))
+		st := time.Now().Truncate(24 * time.Hour)
+
+		count, err := m.tgMessageService.CountByTime(context.Background(), chatID, st)
 		if err != nil {
 			m.l.Error(fmt.Errorf("%s: %w", op, err))
 			return next(ctx)
 		}
 
-		if count >= 10 {
-			resetTime := time.Until(time.Now().Truncate(24 * time.Hour).Add(24 * time.Hour))
-			hours := int(resetTime.Hours())
-			minutes := int(resetTime.Minutes()) % 60
-			options := &telebot.SendOptions{ReplyTo: ctx.Message(), ParseMode: telebot.ModeMarkdown}
-			return ctx.Send(fmt.Sprintf("Вы превысили лимит, вы сможете отправить сообщение через `%dh %dm`", hours, minutes), options)
+		if count >= m.limit {
+			opt := &telebot.SendOptions{ReplyTo: ctx.Message(), ParseMode: telebot.ModeMarkdown}
+			return ctx.Send(fmt.Sprintf("✨Вы превысили лимит, попробуйте позже✨\n\n\n🎁Скоро у вас появится возможность увеличить лимит, оплатив услугу или пригласив друзей🎁"), opt)
 		}
 
 		return next(ctx)

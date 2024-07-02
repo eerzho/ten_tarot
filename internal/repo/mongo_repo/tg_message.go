@@ -24,14 +24,13 @@ func NewTGMessage(m *mongo.Mongo, c *crypter.Crypter) *TGMessage {
 	return &TGMessage{m, c}
 }
 
-func (t *TGMessage) CountByDay(ctx context.Context, chatID string) (int, error) {
+func (t *TGMessage) CountByTime(ctx context.Context, chatID string, st time.Time) (int, error) {
 	const op = "./internal/repo/mongo_repo/tg_message::CountMessagesByDay"
 
-	startOfDay := time.Now().Truncate(24 * time.Hour)
 	filter := bson.M{
 		"chat_id": chatID,
 		"created_at": bson.M{
-			"$gte": startOfDay.Format(time.DateTime),
+			"$gte": st.Format(time.DateTime),
 		},
 	}
 
