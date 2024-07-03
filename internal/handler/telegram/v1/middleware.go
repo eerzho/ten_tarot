@@ -3,7 +3,6 @@ package v1
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"strconv"
 	"sync"
 	"time"
@@ -62,24 +61,17 @@ func (m *middleware) dailyLimit(next telebot.HandlerFunc) telebot.HandlerFunc {
 		chatID := strconv.Itoa(int(ctx.Message().Chat.ID))
 		st := time.Now().Truncate(24 * time.Hour) // or .Add(-24 * time.Hour)
 
-		m.l.Debug("tests", slog.String("chatID", chatID))
-		m.l.Debug("test", slog.String("st", st.Format(time.DateTime)))
-
 		count, err := m.tgMessageService.CountByTime(context.Background(), chatID, st)
 		if err != nil {
 			m.l.Error(fmt.Errorf("%s: %w", op, err))
 			return next(ctx)
 		}
 
-		m.l.Debug("count", slog.Int("count", count))
-		m.l.Debug("limit", slog.Int("limit", m.limit))
-
 		if count >= m.limit {
 			opt := &telebot.SendOptions{ReplyTo: ctx.Message(), ParseMode: telebot.ModeMarkdown}
 			return ctx.Send(fmt.Sprintf("✨Вы превысили лимит, попробуйте позже✨\n\n\n🎁Скоро у вас появится возможность увеличить лимит, оплатив услугу или пригласив друзей🎁"), opt)
 		}
 
-		//return next(ctx)
-		return nil
+		return next(ctx)
 	}
 }
