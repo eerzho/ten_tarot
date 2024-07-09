@@ -4,26 +4,31 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/eerzho/ten_tarot/internal/entity"
 	"github.com/eerzho/ten_tarot/internal/failure"
+	"github.com/eerzho/ten_tarot/internal/model"
 	"github.com/sashabaranov/go-openai"
 )
 
-type Tarot struct {
-	openai *openai.Client
-	model  string
-	prompt string
-}
+type (
+	Tarot interface {
+		Oracle(ctx context.Context, question string, hand []model.Card) (string, error)
+	}
+	tarot struct {
+		openai *openai.Client
+		model  string
+		prompt string
+	}
+)
 
-func NewTarot(model, token, prompt string) *Tarot {
-	return &Tarot{
+func NewTarot(model, token, prompt string) Tarot {
+	return &tarot{
 		openai: openai.NewClient(token),
 		model:  model,
 		prompt: prompt,
 	}
 }
 
-func (t *Tarot) Oracle(ctx context.Context, question string, hand []entity.Card) (string, error) {
+func (t *tarot) Oracle(ctx context.Context, question string, hand []model.Card) (string, error) {
 	messages := []openai.ChatCompletionMessage{
 		{Role: openai.ChatMessageRoleSystem, Content: t.prompt},
 		{

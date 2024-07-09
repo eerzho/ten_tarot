@@ -62,7 +62,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/entity.TGMessage"
+                                                "$ref": "#/definitions/model.TGMessage"
                                             }
                                         }
                                     }
@@ -126,7 +126,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/entity.TGUser"
+                                                "$ref": "#/definitions/model.TGUser"
                                             }
                                         }
                                     }
@@ -139,13 +139,13 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "entity.Pagination": {
+        "model.Pagination": {
             "type": "object",
             "properties": {
-                "countPerPage": {
+                "count_per_page": {
                     "type": "integer"
                 },
-                "currentPage": {
+                "current_page": {
                     "type": "integer"
                 },
                 "total": {
@@ -153,7 +153,7 @@ const docTemplate = `{
                 }
             }
         },
-        "entity.TGMessage": {
+        "model.TGMessage": {
             "type": "object",
             "properties": {
                 "answer": {
@@ -173,7 +173,7 @@ const docTemplate = `{
                 }
             }
         },
-        "entity.TGUser": {
+        "model.TGUser": {
             "type": "object",
             "properties": {
                 "chat_id": {
@@ -195,7 +195,7 @@ const docTemplate = `{
             "properties": {
                 "data": {},
                 "pagination": {
-                    "$ref": "#/definitions/entity.Pagination"
+                    "$ref": "#/definitions/model.Pagination"
                 }
             }
         }

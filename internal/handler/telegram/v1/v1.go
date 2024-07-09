@@ -15,7 +15,7 @@ import (
 
 const RID = "X-Request-ID"
 
-func NewHandler(l logger.Logger, bot *telebot.Bot, tgUserService *service.TGUser, tgMessageService *service.TGMessage) {
+func NewHandler(l logger.Logger, bot *telebot.Bot, tgUserService service.TGUser, tgMessageService service.TGMessage) {
 	mv := newMiddleware(l, tgMessageService)
 	bot.Use(mv.log)
 
@@ -28,10 +28,10 @@ type middleware struct {
 	mu               sync.Mutex
 	limit            int
 	activeRequest    map[int64]struct{}
-	tgMessageService *service.TGMessage
+	tgMessageService service.TGMessage
 }
 
-func newMiddleware(l logger.Logger, tgMessageService *service.TGMessage) *middleware {
+func newMiddleware(l logger.Logger, tgMessageService service.TGMessage) *middleware {
 	return &middleware{
 		l:                l,
 		limit:            10,

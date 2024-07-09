@@ -12,10 +12,10 @@ import (
 
 type command struct {
 	l             logger.Logger
-	tgUserService *service.TGUser
+	tgUserService service.TGUser
 }
 
-func newCommand(l logger.Logger, bot *telebot.Bot, tgUserService *service.TGUser) *command {
+func newCommand(l logger.Logger, bot *telebot.Bot, tgUserService service.TGUser) *command {
 	c := &command{
 		l:             l,
 		tgUserService: tgUserService,

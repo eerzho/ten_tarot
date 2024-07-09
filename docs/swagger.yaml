@@ -1,15 +1,15 @@
 basePath: /api/v1
 definitions:
-  entity.Pagination:
+  model.Pagination:
     properties:
-      countPerPage:
+      count_per_page:
         type: integer
-      currentPage:
+      current_page:
         type: integer
       total:
         type: integer
     type: object
-  entity.TGMessage:
+  model.TGMessage:
     properties:
       answer:
         type: string
@@ -22,7 +22,7 @@ definitions:
       text:
         type: string
     type: object
-  entity.TGUser:
+  model.TGUser:
     properties:
       chat_id:
         type: string
@@ -37,7 +37,7 @@ definitions:
     properties:
       data: {}
       pagination:
-        $ref: '#/definitions/entity.Pagination'
+        $ref: '#/definitions/model.Pagination'
     type: object
 info:
   contact: {}
@@ -73,7 +73,7 @@ paths:
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/entity.TGMessage'
+                    $ref: '#/definitions/model.TGMessage'
                   type: array
               type: object
       summary: Show messages
@@ -112,7 +112,7 @@ paths:
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/entity.TGUser'
+                    $ref: '#/definitions/model.TGUser'
                   type: array
               type: object
       summary: Show users

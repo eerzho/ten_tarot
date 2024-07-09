@@ -20,7 +20,7 @@ const RID = "X-Request-ID"
 // @Title       Ten tarot tg bot api
 // @Version     1.0
 // @BasePath    /api/v1
-func NewHandler(l logger.Logger, router *gin.Engine, tgUserService *service.TGUser, tgMessageService *service.TGMessage) {
+func NewHandler(l logger.Logger, router *gin.Engine, tgUserService service.TGUser, tgMessageService service.TGMessage) {
 	swaggerHandler := ginSwagger.DisablingWrapHandler(swaggerFiles.Handler, "DISABLE_SWAGGER_HTTP_HANDLER")
 	router.GET("/swagger/*any", swaggerHandler)
 

@@ -12,10 +12,10 @@ import (
 
 type tgUser struct {
 	l             logger.Logger
-	tgUserService *service.TGUser
+	tgUserService service.TGUser
 }
 
-func newTGUser(l logger.Logger, router *gin.RouterGroup, tgUserService *service.TGUser) *tgUser {
+func newTGUser(l logger.Logger, router *gin.RouterGroup, tgUserService service.TGUser) *tgUser {
 	t := &tgUser{
 		l:             l,
 		tgUserService: tgUserService,
@@ -36,7 +36,7 @@ func newTGUser(l logger.Logger, router *gin.RouterGroup, tgUserService *service.
 // @Param chat_id query string false "ChatID"
 // @Param page query int false "Page"
 // @Param count query int false "Count"
-// @Success 200 {object} response.pagination{data=[]entity.TGUser}
+// @Success 200 {object} response.pagination{data=[]model.TGUser}
 // @Router /tg-users [get]
 func (t *tgUser) list(ctx *gin.Context) {
 	const op = "./internal/handler/http/v1/tg_user::list"

@@ -30,6 +30,8 @@ func New(l logger.Logger, cfg *config.Config, mg *mongo.Mongo, c *crypter.Crypte
 	// service
 	tgUserService := service.NewTGUser(tgUserRepo)
 	cardService := service.NewCard()
+	// todo
+	//tarotService := service.NewTarotMock()
 	tarotService := service.NewTarot(cfg.Model, cfg.GPT.Token, cfg.GPT.Prompt)
 	tgMessageService := service.NewTGMessage(tgMessageRepo, cardService, tarotService)
 

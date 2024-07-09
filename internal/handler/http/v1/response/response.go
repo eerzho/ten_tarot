@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/eerzho/ten_tarot/internal/entity"
 	"github.com/eerzho/ten_tarot/internal/failure"
+	"github.com/eerzho/ten_tarot/internal/model"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 )
@@ -22,8 +22,8 @@ type (
 	}
 
 	pagination struct {
-		Data       interface{}        `json:"data"`
-		Pagination *entity.Pagination `json:"pagination,omitempty"`
+		Data       interface{}       `json:"data"`
+		Pagination *model.Pagination `json:"pagination,omitempty"`
 	}
 )
 
@@ -59,6 +59,6 @@ func Pagination(ctx *gin.Context, currentPage, countPerPage, total int, data int
 	}
 	ctx.JSON(http.StatusOK, pagination{
 		Data:       data,
-		Pagination: &entity.Pagination{CurrentPage: currentPage, CountPerPage: countPerPage, Total: total},
+		Pagination: &model.Pagination{CurrentPage: currentPage, CountPerPage: countPerPage, Total: total},
 	})
 }

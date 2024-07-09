@@ -1,4 +1,4 @@
-package entity
+package model
 
 type TGUser struct {
 	ID        string `bson:"_id,omitempty" json:"id"`

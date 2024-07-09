@@ -6,8 +6,8 @@ import (
 	"fmt"
 
 	"github.com/eerzho/event_manager/pkg/mongo"
-	"github.com/eerzho/ten_tarot/internal/entity"
 	"github.com/eerzho/ten_tarot/internal/failure"
+	"github.com/eerzho/ten_tarot/internal/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	mongoD "go.mongodb.org/mongo-driver/mongo"
@@ -24,7 +24,7 @@ func NewTGUser(mg *mongo.Mongo) *TGUser {
 	return &TGUser{mg}
 }
 
-func (t *TGUser) Create(ctx context.Context, user *entity.TGUser) error {
+func (t *TGUser) Create(ctx context.Context, user *model.TGUser) error {
 	user.ID = primitive.NewObjectID().Hex()
 
 	result, err := t.DB.Collection(TgUserTable).InsertOne(ctx, user)
@@ -42,7 +42,7 @@ func (t *TGUser) Create(ctx context.Context, user *entity.TGUser) error {
 func (t *TGUser) ExistsByChatID(ctx context.Context, chatID string) (bool, error) {
 	filter := bson.D{{"chat_id", chatID}}
 
-	var user entity.TGUser
+	var user model.TGUser
 	err := t.DB.Collection(TgUserTable).FindOne(ctx, filter).Decode(&user)
 	if err != nil {
 		if errors.Is(err, mongoD.ErrNoDocuments) {
@@ -65,10 +65,10 @@ func (t *TGUser) Count(ctx context.Context, chatID, username string) (int, error
 	return int(count), nil
 }
 
-func (t *TGUser) ByChatID(ctx context.Context, chatID string) (*entity.TGUser, error) {
+func (t *TGUser) ByChatID(ctx context.Context, chatID string) (*model.TGUser, error) {
 	filter := bson.D{{"chat_id", chatID}}
 
-	var user entity.TGUser
+	var user model.TGUser
 	err := t.DB.Collection(TgUserTable).FindOne(ctx, filter).Decode(&user)
 	if err != nil {
 		if errors.Is(err, mongoD.ErrNoDocuments) {
@@ -80,8 +80,8 @@ func (t *TGUser) ByChatID(ctx context.Context, chatID string) (*entity.TGUser, e
 	return &user, nil
 }
 
-func (t *TGUser) List(ctx context.Context, username, chatID string, page, count int) ([]entity.TGUser, error) {
-	var users []entity.TGUser
+func (t *TGUser) List(ctx context.Context, username, chatID string, page, count int) ([]model.TGUser, error) {
+	var users []model.TGUser
 
 	opts := options.Find()
 	if page > 0 && count > 0 {
@@ -99,7 +99,7 @@ func (t *TGUser) List(ctx context.Context, username, chatID string, page, count 
 	}()
 
 	for cursor.Next(ctx) {
-		var user entity.TGUser
+		var user model.TGUser
 		if err = cursor.Decode(&user); err != nil {
 			return nil, err
 		}

@@ -12,11 +12,11 @@ import (
 
 type message struct {
 	l                logger.Logger
-	tgMessageService *service.TGMessage
-	tgUserService    *service.TGUser
+	tgMessageService service.TGMessage
+	tgUserService    service.TGUser
 }
 
-func newMessage(l logger.Logger, mv *middleware, bot *telebot.Bot, tgMessageService *service.TGMessage, tgUserService *service.TGUser) *message {
+func newMessage(l logger.Logger, mv *middleware, bot *telebot.Bot, tgMessageService service.TGMessage, tgUserService service.TGUser) *message {
 	m := &message{
 		l:                l,
 		tgMessageService: tgMessageService,

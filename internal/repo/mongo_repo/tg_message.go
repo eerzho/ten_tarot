@@ -6,8 +6,8 @@ import (
 
 	"github.com/eerzho/event_manager/pkg/crypter"
 	"github.com/eerzho/event_manager/pkg/mongo"
-	"github.com/eerzho/ten_tarot/internal/entity"
 	"github.com/eerzho/ten_tarot/internal/failure"
+	"github.com/eerzho/ten_tarot/internal/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -37,7 +37,7 @@ func (t *TGMessage) Count(ctx context.Context, chatID string) (int, error) {
 	return int(count), nil
 }
 
-func (t *TGMessage) Create(ctx context.Context, message *entity.TGMessage) error {
+func (t *TGMessage) Create(ctx context.Context, message *model.TGMessage) error {
 	message.ID = primitive.NewObjectID().Hex()
 
 	originalText := message.Text
@@ -76,8 +76,8 @@ func (t *TGMessage) CountByTime(ctx context.Context, chatID string, st time.Time
 	return int(count), nil
 }
 
-func (t *TGMessage) List(ctx context.Context, chatID string, page, count int) ([]entity.TGMessage, error) {
-	var messages []entity.TGMessage
+func (t *TGMessage) List(ctx context.Context, chatID string, page, count int) ([]model.TGMessage, error) {
+	var messages []model.TGMessage
 
 	opts := options.Find()
 	if page > 0 && count > 0 {
@@ -95,7 +95,7 @@ func (t *TGMessage) List(ctx context.Context, chatID string, page, count int) ([
 	}()
 
 	for cursor.Next(ctx) {
-		var message entity.TGMessage
+		var message model.TGMessage
 		if err = cursor.Decode(&message); err != nil {
 			return nil, err
 		}

@@ -12,10 +12,10 @@ import (
 
 type tgMessage struct {
 	l                logger.Logger
-	tgMessageService *service.TGMessage
+	tgMessageService service.TGMessage
 }
 
-func newTGMessage(l logger.Logger, router *gin.RouterGroup, tgMessageService *service.TGMessage) *tgMessage {
+func newTGMessage(l logger.Logger, router *gin.RouterGroup, tgMessageService service.TGMessage) *tgMessage {
 	t := tgMessage{
 		l:                l,
 		tgMessageService: tgMessageService,
@@ -35,7 +35,7 @@ func newTGMessage(l logger.Logger, router *gin.RouterGroup, tgMessageService *se
 // @Param chat_id query string false "ChatID"
 // @Param page query int false "Page"
 // @Param count query int false "Count"
-// @Success 200 {object} response.pagination{data=[]entity.TGMessage}
+// @Success 200 {object} response.pagination{data=[]model.TGMessage}
 // @Router /tg-messages [get]
 func (t *tgMessage) list(ctx *gin.Context) {
 	const op = "./internal/handler/http/v1/tg_message::list"
