@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/eerzho/event_manager/pkg/logger"
-	"github.com/eerzho/ten_tarot/internal/entity"
 	"github.com/eerzho/ten_tarot/internal/service"
+	"github.com/eerzho/ten_tarot/pkg/logger"
 	"gopkg.in/telebot.v3"
 )
 
@@ -30,15 +29,17 @@ func newCommand(l logger.Logger, bot *telebot.Bot, tgUserService *service.TGUser
 func (c *command) start(ctx telebot.Context) error {
 	const op = "./internal/handler/telegram/v1/command::start"
 
-	user := entity.TGUser{
-		Username: ctx.Sender().Username,
-		ChatID:   strconv.FormatInt(ctx.Sender().ID, 10),
-	}
-
-	err := c.tgUserService.Create(context.Background(), &user)
+	_, err := c.tgUserService.Create(context.Background(), strconv.Itoa(int(ctx.Sender().ID)), ctx.Sender().Username)
 	if err != nil {
-		c.l.Error(fmt.Errorf("%s: %w", op, err))
+		c.l.Error(fmt.Sprintf("%s - %s", op, err.Error()))
 	}
 
-	return ctx.Send("Я ваш личный Таролог и готов помочь вам получить ответы на любые вопросы. Просто отправьте свой вопрос, и я сделаю расклад на Таро специально для вас.\n\n✨Будьте готовы узнать, что приготовила для вас судьба✨")
+	if err = ctx.Send("Я ваш личный Таролог и готов помочь вам получить ответы на любые вопросы. " +
+		"Просто отправьте свой вопрос, и я сделаю расклад на Таро специально для вас.\n\n" +
+		"✨Будьте готовы узнать, что приготовила для вас судьба✨"); err != nil {
+		c.l.Error(fmt.Sprintf("%s - %s", op, err.Error()))
+		return err
+	}
+
+	return nil
 }

@@ -1,12 +1,21 @@
 basePath: /api/v1
 definitions:
+  entity.Pagination:
+    properties:
+      countPerPage:
+        type: integer
+      currentPage:
+        type: integer
+      total:
+        type: integer
+    type: object
   entity.TGMessage:
     properties:
       answer:
         type: string
       chat_id:
         type: string
-      file:
+      created_at:
         type: string
       id:
         type: string
@@ -17,19 +26,18 @@ definitions:
     properties:
       chat_id:
         type: string
+      created_at:
+        type: string
       id:
         type: string
       username:
         type: string
     type: object
-  v1.errorResponse:
-    properties:
-      message:
-        type: string
-    type: object
-  v1.successResponse:
+  response.pagination:
     properties:
       data: {}
+      pagination:
+        $ref: '#/definitions/entity.Pagination'
     type: object
 info:
   contact: {}
@@ -61,17 +69,13 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/v1.successResponse'
+            - $ref: '#/definitions/response.pagination'
             - properties:
                 data:
                   items:
                     $ref: '#/definitions/entity.TGMessage'
                   type: array
               type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/v1.errorResponse'
       summary: Show messages
       tags:
       - tg-messages
@@ -79,7 +83,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Show all users list
+      description: Show users list
       parameters:
       - description: Username
         in: query
@@ -104,17 +108,13 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/v1.successResponse'
+            - $ref: '#/definitions/response.pagination'
             - properties:
                 data:
                   items:
                     $ref: '#/definitions/entity.TGUser'
                   type: array
               type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/v1.errorResponse'
       summary: Show users
       tags:
       - tg-users

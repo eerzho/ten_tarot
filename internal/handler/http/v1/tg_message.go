@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/eerzho/event_manager/pkg/logger"
+	"github.com/eerzho/ten_tarot/internal/handler/http/v1/response"
 	"github.com/eerzho/ten_tarot/internal/service"
+	"github.com/eerzho/ten_tarot/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,11 +21,12 @@ func newTGMessage(l logger.Logger, router *gin.RouterGroup, tgMessageService *se
 		tgMessageService: tgMessageService,
 	}
 
-	router.GET("/tg-messages", t.all)
+	router.GET("/tg-messages", t.list)
 
 	return &t
 }
 
+// list -.
 // @Summary Show messages
 // @Description Show all messages list
 // @Tags tg-messages
@@ -33,28 +35,27 @@ func newTGMessage(l logger.Logger, router *gin.RouterGroup, tgMessageService *se
 // @Param chat_id query string false "ChatID"
 // @Param page query int false "Page"
 // @Param count query int false "Count"
-// @Success 200 {object} successResponse{data=[]entity.TGMessage}
-// @Failure 500 {object} errorResponse
+// @Success 200 {object} response.pagination{data=[]entity.TGMessage}
 // @Router /tg-messages [get]
-func (t *tgMessage) all(ctx *gin.Context) {
-	const op = "./internal/handler/http/v1/tg_message::all"
+func (t *tgMessage) list(ctx *gin.Context) {
+	const op = "./internal/handler/http/v1/tg_message::list"
 
-	page, err := strconv.Atoi(ctx.Query("page"))
-	if err != nil {
-		page = 0
-	}
-	count, err := strconv.Atoi(ctx.Query("count"))
-	if err != nil {
-		count = 0
+	page, _ := strconv.Atoi(ctx.Query("page"))
+	if page == 0 {
+		page = 1
 	}
 
-	messages, err := t.tgMessageService.All(ctx, ctx.Query("chat_id"), page, count)
+	count, _ := strconv.Atoi(ctx.Query("count"))
+	if count == 0 {
+		count = 10
+	}
+
+	messages, total, err := t.tgMessageService.List(ctx, ctx.Query("chat_id"), page, count)
 	if err != nil {
-		t.l.Error(fmt.Errorf("%s: %w", op, err))
-		errorRsp(ctx, err)
+		t.l.Error(fmt.Sprintf("%s - %s", op, err.Error()))
+		response.Fail(ctx, err)
 		return
 	}
 
-	successRsp(ctx, messages)
-	return
+	response.Pagination(ctx, page, count, total, messages)
 }

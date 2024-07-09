@@ -54,7 +54,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/v1.successResponse"
+                                    "$ref": "#/definitions/response.pagination"
                                 },
                                 {
                                     "type": "object",
@@ -69,19 +69,13 @@ const docTemplate = `{
                                 }
                             ]
                         }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/v1.errorResponse"
-                        }
                     }
                 }
             }
         },
         "/tg-users": {
             "get": {
-                "description": "Show all users list",
+                "description": "Show users list",
                 "consumes": [
                     "application/json"
                 ],
@@ -124,7 +118,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/v1.successResponse"
+                                    "$ref": "#/definitions/response.pagination"
                                 },
                                 {
                                     "type": "object",
@@ -139,18 +133,26 @@ const docTemplate = `{
                                 }
                             ]
                         }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/v1.errorResponse"
-                        }
                     }
                 }
             }
         }
     },
     "definitions": {
+        "entity.Pagination": {
+            "type": "object",
+            "properties": {
+                "countPerPage": {
+                    "type": "integer"
+                },
+                "currentPage": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
         "entity.TGMessage": {
             "type": "object",
             "properties": {
@@ -160,7 +162,7 @@ const docTemplate = `{
                 "chat_id": {
                     "type": "string"
                 },
-                "file": {
+                "created_at": {
                     "type": "string"
                 },
                 "id": {
@@ -177,6 +179,9 @@ const docTemplate = `{
                 "chat_id": {
                     "type": "string"
                 },
+                "created_at": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -185,18 +190,13 @@ const docTemplate = `{
                 }
             }
         },
-        "v1.errorResponse": {
+        "response.pagination": {
             "type": "object",
             "properties": {
-                "message": {
-                    "type": "string"
+                "data": {},
+                "pagination": {
+                    "$ref": "#/definitions/entity.Pagination"
                 }
-            }
-        },
-        "v1.successResponse": {
-            "type": "object",
-            "properties": {
-                "data": {}
             }
         }
     }

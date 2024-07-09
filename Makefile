@@ -40,6 +40,10 @@ else
 endif
 .PHONY: build
 
+swag-generate: ## Run swag init -g ./internal/handler/http/v1/v1.go
+	docker compose exec ten_tarot_server swag init -g ./internal/handler/http/v1/v1.go
+.PHONY: swag
+
 sh: ## Run docker compose exec $(name) sh
 ifdef name
 	docker compose exec $(name) sh

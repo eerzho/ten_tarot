@@ -34,7 +34,7 @@ func NewCard() *Card {
 	return &card
 }
 
-func (c *Card) Shuffle(ctx context.Context, n int) []entity.Card {
+func (c *Card) Shuffle(ctx context.Context, n int) ([]entity.Card, error) {
 	if n <= 0 {
 		n = 1
 	}
@@ -50,11 +50,16 @@ func (c *Card) Shuffle(ctx context.Context, n int) []entity.Card {
 	shuffled := make([]entity.Card, n)
 
 	for i := 0; i < n; i++ {
-		j := rand.Intn(len(uniqI))
-		shuffled[i] = c.deck[uniqI[j]]
-		uniqI[j] = uniqI[len(uniqI)-1]
-		uniqI = uniqI[:len(uniqI)-1]
+		select {
+		case <-ctx.Done():
+			return shuffled[:i], ctx.Err()
+		default:
+			j := rand.Intn(len(uniqI))
+			shuffled[i] = c.deck[uniqI[j]]
+			uniqI[j] = uniqI[len(uniqI)-1]
+			uniqI = uniqI[:len(uniqI)-1]
+		}
 	}
 
-	return shuffled
+	return shuffled, nil
 }
