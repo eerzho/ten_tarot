@@ -4,19 +4,27 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
 
-	"github.com/eerzho/ten_tarot/internal/service"
+	"github.com/eerzho/ten_tarot/internal/model"
 	"github.com/eerzho/ten_tarot/pkg/logger"
 	"gopkg.in/telebot.v3"
 )
 
-type message struct {
-	l                logger.Logger
-	tgMessageService service.TGMessage
-	tgUserService    service.TGUser
-}
+type (
+	message struct {
+		l                logger.Logger
+		tgMessageService tgMessageService
+		tgUserService    tgUserService
+	}
 
-func newMessage(l logger.Logger, mv *middleware, bot *telebot.Bot, tgMessageService service.TGMessage, tgUserService service.TGUser) *message {
+	tgMessageService interface {
+		CountByTime(ctx context.Context, chatID string, st time.Time) (int, error)
+		Create(ctx context.Context, chatID, text string) (*model.TGMessage, error)
+	}
+)
+
+func newMessage(l logger.Logger, mv *middleware, bot *telebot.Bot, tgMessageService tgMessageService, tgUserService tgUserService) *message {
 	m := &message{
 		l:                l,
 		tgMessageService: tgMessageService,
@@ -40,12 +48,12 @@ func (m *message) text(ctx telebot.Context) error {
 
 	opt := &telebot.SendOptions{ReplyTo: ctx.Message(), ParseMode: telebot.ModeMarkdown}
 
-	// todo remove sent message
-	if err := ctx.Send("✨Пожалуйста, подождите✨", opt); err != nil {
+	waitMsg, err := ctx.Bot().Send(ctx.Sender(), "✨Пожалуйста, подождите✨", opt)
+	if err != nil {
 		m.l.Error(fmt.Sprintf("%s - %s", op, err.Error()))
 	}
 
-	msg, err := m.tgMessageService.Create(ctxB, chatID, ctx.Message().Text)
+	tgMsg, err := m.tgMessageService.Create(ctxB, chatID, ctx.Message().Text)
 	if err != nil {
 		m.l.Error(fmt.Sprintf("%s - %s", op, err.Error()))
 		if err = ctx.Send("✨Пожалуйста, повторите попытку позже✨", opt); err != nil {
@@ -55,7 +63,11 @@ func (m *message) text(ctx telebot.Context) error {
 		return err
 	}
 
-	if err = ctx.Send(msg.Answer, opt); err != nil {
+	if err = ctx.Bot().Delete(waitMsg); err != nil {
+		m.l.Error(fmt.Sprintf("%s - %s", op, err.Error()))
+	}
+
+	if _, err = ctx.Bot().Send(ctx.Sender(), tgMsg.Answer, opt); err != nil {
 		m.l.Error(fmt.Sprintf("%s - %s", op, err.Error()))
 		return err
 	}

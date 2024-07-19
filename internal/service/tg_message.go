@@ -8,39 +8,41 @@ import (
 )
 
 type (
-	TGMessageRepo interface {
+	TGMessage struct {
+		repo         tgMessageRepo
+		cardService  cardService
+		tarotService tarotService
+	}
+
+	tgMessageRepo interface {
 		Count(ctx context.Context, chatID string) (int, error)
 		Create(ctx context.Context, message *model.TGMessage) error
 		CountByTime(ctx context.Context, chatID string, st time.Time) (int, error)
 		List(ctx context.Context, chatID string, page, count int) ([]model.TGMessage, error)
 	}
 
-	TGMessage interface {
-		CountByTime(ctx context.Context, chatID string, st time.Time) (int, error)
-		Create(ctx context.Context, chatID, text string) (*model.TGMessage, error)
-		List(ctx context.Context, chatID string, page, count int) ([]model.TGMessage, int, error)
+	cardService interface {
+		Shuffle(ctx context.Context, n int) ([]model.Card, error)
 	}
 
-	tgMessage struct {
-		repo         TGMessageRepo
-		cardService  Card
-		tarotService Tarot
+	tarotService interface {
+		Oracle(ctx context.Context, question string, hand []model.Card) (string, error)
 	}
 )
 
 func NewTGMessage(
-	repo TGMessageRepo,
-	cardService Card,
-	tarotService Tarot,
-) TGMessage {
-	return &tgMessage{
+	repo tgMessageRepo,
+	cardService cardService,
+	tarotService tarotService,
+) *TGMessage {
+	return &TGMessage{
 		repo:         repo,
 		cardService:  cardService,
 		tarotService: tarotService,
 	}
 }
 
-func (t *tgMessage) CountByTime(ctx context.Context, chatID string, st time.Time) (int, error) {
+func (t *TGMessage) CountByTime(ctx context.Context, chatID string, st time.Time) (int, error) {
 	count, err := t.repo.CountByTime(ctx, chatID, st)
 	if err != nil {
 		return 0, err
@@ -49,7 +51,7 @@ func (t *tgMessage) CountByTime(ctx context.Context, chatID string, st time.Time
 	return count, nil
 }
 
-func (t *tgMessage) Create(ctx context.Context, chatID, text string) (*model.TGMessage, error) {
+func (t *TGMessage) Create(ctx context.Context, chatID, text string) (*model.TGMessage, error) {
 	hand, err := t.cardService.Shuffle(ctx, 5)
 	if err != nil {
 		return nil, err
@@ -73,7 +75,7 @@ func (t *tgMessage) Create(ctx context.Context, chatID, text string) (*model.TGM
 	return &message, nil
 }
 
-func (t *tgMessage) List(ctx context.Context, chatID string, page, count int) ([]model.TGMessage, int, error) {
+func (t *TGMessage) List(ctx context.Context, chatID string, page, count int) ([]model.TGMessage, int, error) {
 	messages, err := t.repo.List(ctx, chatID, page, count)
 	if err != nil {
 		return nil, 0, err
@@ -87,7 +89,7 @@ func (t *tgMessage) List(ctx context.Context, chatID string, page, count int) ([
 	return messages, total, nil
 }
 
-func (t *tgMessage) count(ctx context.Context, chatID string) (int, error) {
+func (t *TGMessage) count(ctx context.Context, chatID string) (int, error) {
 	count, err := t.repo.Count(ctx, chatID)
 	if err != nil {
 		return 0, err

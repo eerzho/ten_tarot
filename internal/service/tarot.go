@@ -10,25 +10,22 @@ import (
 )
 
 type (
-	Tarot interface {
-		Oracle(ctx context.Context, question string, hand []model.Card) (string, error)
-	}
-	tarot struct {
+	Tarot struct {
 		openai *openai.Client
 		model  string
 		prompt string
 	}
 )
 
-func NewTarot(model, token, prompt string) Tarot {
-	return &tarot{
+func NewTarot(model, token, prompt string) *Tarot {
+	return &Tarot{
 		openai: openai.NewClient(token),
 		model:  model,
 		prompt: prompt,
 	}
 }
 
-func (t *tarot) Oracle(ctx context.Context, question string, hand []model.Card) (string, error) {
+func (t *Tarot) Oracle(ctx context.Context, question string, hand []model.Card) (string, error) {
 	messages := []openai.ChatCompletionMessage{
 		{Role: openai.ChatMessageRoleSystem, Content: t.prompt},
 		{

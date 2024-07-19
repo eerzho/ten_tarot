@@ -5,7 +5,6 @@ import (
 	"time"
 
 	_ "github.com/eerzho/ten_tarot/docs"
-	"github.com/eerzho/ten_tarot/internal/service"
 	"github.com/eerzho/ten_tarot/pkg/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -20,7 +19,7 @@ const RID = "X-Request-ID"
 // @Title       Ten tarot tg bot api
 // @Version     1.0
 // @BasePath    /api/v1
-func NewHandler(l logger.Logger, router *gin.Engine, tgUserService service.TGUser, tgMessageService service.TGMessage) {
+func NewHandler(l logger.Logger, router *gin.Engine, tgUserService tgUserService, tgMessageService tgMessageService) {
 	swaggerHandler := ginSwagger.DisablingWrapHandler(swaggerFiles.Handler, "DISABLE_SWAGGER_HTTP_HANDLER")
 	router.GET("/swagger/*any", swaggerHandler)
 
@@ -54,5 +53,5 @@ func (m *middleware) log(ctx *gin.Context) {
 	ctx.Next()
 	duration := time.Since(start)
 
-	m.l.Info(fmt.Sprintf("end: %s - %s", id, duration.String()))
+	m.l.Info(fmt.Sprintf("end: %s - %.4f sec.", id, duration.Seconds()))
 }

@@ -6,13 +6,13 @@ import (
 	"github.com/eerzho/ten_tarot/internal/model"
 )
 
-type tarotMock struct {
+type TarotMock struct {
 }
 
-func NewTarotMock() Tarot {
-	return &tarotMock{}
+func NewTarotMock() *TarotMock {
+	return &TarotMock{}
 }
 
-func (t *tarotMock) Oracle(ctx context.Context, question string, hand []model.Card) (string, error) {
+func (t *TarotMock) Oracle(ctx context.Context, question string, hand []model.Card) (string, error) {
 	return "From Mock", nil
 }

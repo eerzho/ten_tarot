@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/eerzho/ten_tarot/internal/service"
 	"github.com/eerzho/ten_tarot/pkg/logger"
 	"github.com/google/uuid"
 	"gopkg.in/telebot.v3"
@@ -15,7 +14,7 @@ import (
 
 const RID = "X-Request-ID"
 
-func NewHandler(l logger.Logger, bot *telebot.Bot, tgUserService service.TGUser, tgMessageService service.TGMessage) {
+func NewHandler(l logger.Logger, bot *telebot.Bot, tgUserService tgUserService, tgMessageService tgMessageService) {
 	mv := newMiddleware(l, tgMessageService)
 	bot.Use(mv.log)
 
@@ -28,10 +27,10 @@ type middleware struct {
 	mu               sync.Mutex
 	limit            int
 	activeRequest    map[int64]struct{}
-	tgMessageService service.TGMessage
+	tgMessageService tgMessageService
 }
 
-func newMiddleware(l logger.Logger, tgMessageService service.TGMessage) *middleware {
+func newMiddleware(l logger.Logger, tgMessageService tgMessageService) *middleware {
 	return &middleware{
 		l:                l,
 		limit:            10,
@@ -51,7 +50,7 @@ func (m *middleware) log(next telebot.HandlerFunc) telebot.HandlerFunc {
 		err := next(ctx)
 		duration := time.Since(start)
 
-		m.l.Info(fmt.Sprintf("end: %s - %s", id, duration.String()))
+		m.l.Info(fmt.Sprintf("end: %s - %.4f sec.", id, duration.Seconds()))
 
 		return err
 	}
@@ -59,11 +58,18 @@ func (m *middleware) log(next telebot.HandlerFunc) telebot.HandlerFunc {
 
 func (m *middleware) rateLimit(next telebot.HandlerFunc) telebot.HandlerFunc {
 	return func(ctx telebot.Context) error {
+		const op = "./internal/handler/telegram/v1/middleware::rateLimit"
+
 		userId := ctx.Message().Chat.ID
 		exists := m.existsActiveRequest(userId)
+
 		if exists {
-			options := &telebot.SendOptions{ReplyTo: ctx.Message()}
-			return ctx.Send("✨Пожалуйста, подождите✨", options)
+			opt := &telebot.SendOptions{ReplyTo: ctx.Message()}
+			if _, err := ctx.Bot().Send(ctx.Sender(), "✨Пожалуйста, подождите✨", opt); err != nil {
+				m.l.Error(fmt.Sprintf("%s - %s", op, err.Error()))
+				return err
+			}
+			return nil
 		} else {
 			m.setActiveRequest(userId)
 			defer func() {
@@ -96,17 +102,24 @@ func (m *middleware) existsActiveRequest(userId int64) bool {
 
 func (m *middleware) dailyLimit(next telebot.HandlerFunc) telebot.HandlerFunc {
 	return func(ctx telebot.Context) error {
+		const op = "./internal/handler/telegram/v1/middleware::dailyLimit"
+
 		st := time.Now().Add(-24 * time.Hour)
 
 		count, err := m.tgMessageService.CountByTime(context.Background(), strconv.Itoa(int(ctx.Message().Chat.ID)), st)
 		if err != nil {
+			m.l.Error(fmt.Sprintf("%s - %s", op, err.Error()))
 			return next(ctx)
 		}
 
 		if count >= m.limit {
 			opt := &telebot.SendOptions{ReplyTo: ctx.Message(), ParseMode: telebot.ModeMarkdown}
-			return ctx.Send(fmt.Sprintf("✨Вы превысили лимит, попробуйте позже✨\n\n\n"+
-				"🎁Скоро у вас появится возможность увеличить лимит, оплатив услугу или пригласив друзей🎁"), opt)
+			if _, err = ctx.Bot().Send(ctx.Sender(), fmt.Sprintf("✨Вы превысили лимит, попробуйте позже✨\n\n\n"+
+				"🎁Скоро у вас появится возможность увеличить лимит, оплатив услугу или пригласив друзей🎁"), opt); err != nil {
+				m.l.Error(fmt.Sprintf("%s - %s", op, err.Error()))
+				return err
+			}
+			return nil
 		}
 
 		return next(ctx)

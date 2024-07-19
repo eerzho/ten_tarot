@@ -5,17 +5,23 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/eerzho/ten_tarot/internal/service"
+	"github.com/eerzho/ten_tarot/internal/model"
 	"github.com/eerzho/ten_tarot/pkg/logger"
 	"gopkg.in/telebot.v3"
 )
 
-type command struct {
-	l             logger.Logger
-	tgUserService service.TGUser
-}
+type (
+	command struct {
+		l             logger.Logger
+		tgUserService tgUserService
+	}
 
-func newCommand(l logger.Logger, bot *telebot.Bot, tgUserService service.TGUser) *command {
+	tgUserService interface {
+		Create(ctx context.Context, chatID, username string) (*model.TGUser, error)
+	}
+)
+
+func newCommand(l logger.Logger, bot *telebot.Bot, tgUserService tgUserService) *command {
 	c := &command{
 		l:             l,
 		tgUserService: tgUserService,
@@ -34,8 +40,8 @@ func (c *command) start(ctx telebot.Context) error {
 		c.l.Error(fmt.Sprintf("%s - %s", op, err.Error()))
 	}
 
-	if err = ctx.Send("Я ваш личный Таролог и готов помочь вам получить ответы на любые вопросы. " +
-		"Просто отправьте свой вопрос, и я сделаю расклад на Таро специально для вас.\n\n" +
+	if _, err = ctx.Bot().Send(ctx.Sender(), "Я ваш личный Таролог и готов помочь вам получить ответы на любые вопросы. "+
+		"Просто отправьте свой вопрос, и я сделаю расклад на Таро специально для вас.\n\n"+
 		"✨Будьте готовы узнать, что приготовила для вас судьба✨"); err != nil {
 		c.l.Error(fmt.Sprintf("%s - %s", op, err.Error()))
 		return err

@@ -1,21 +1,28 @@
 package v1
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 
 	"github.com/eerzho/ten_tarot/internal/handler/http/v1/response"
-	"github.com/eerzho/ten_tarot/internal/service"
+	"github.com/eerzho/ten_tarot/internal/model"
 	"github.com/eerzho/ten_tarot/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
 
-type tgUser struct {
-	l             logger.Logger
-	tgUserService service.TGUser
-}
+type (
+	tgUser struct {
+		l             logger.Logger
+		tgUserService tgUserService
+	}
 
-func newTGUser(l logger.Logger, router *gin.RouterGroup, tgUserService service.TGUser) *tgUser {
+	tgUserService interface {
+		List(ctx context.Context, username, chatID string, page, count int) ([]model.TGUser, int, error)
+	}
+)
+
+func newTGUser(l logger.Logger, router *gin.RouterGroup, tgUserService tgUserService) *tgUser {
 	t := &tgUser{
 		l:             l,
 		tgUserService: tgUserService,

@@ -9,17 +9,14 @@ import (
 )
 
 type (
-	Card interface {
-		Shuffle(ctx context.Context, n int) ([]model.Card, error)
-	}
-	card struct {
+	Card struct {
 		len  int
 		deck []model.Card
 	}
 )
 
-func NewCard() Card {
-	c := card{}
+func NewCard() *Card {
+	c := Card{}
 
 	suits := []string{"Cups", "Pentacles", "Swords", "Wands"}
 	values := []string{"Ace", "2", "3", "4", "5", "6", "7", "8", "9", "10", "Page", "Knight", "Queen", "King"}
@@ -39,7 +36,7 @@ func NewCard() Card {
 	return &c
 }
 
-func (c *card) Shuffle(ctx context.Context, n int) ([]model.Card, error) {
+func (c *Card) Shuffle(ctx context.Context, n int) ([]model.Card, error) {
 	if n <= 0 {
 		n = 1
 	}
