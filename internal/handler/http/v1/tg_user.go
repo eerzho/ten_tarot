@@ -1,32 +1,41 @@
 package v1
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 
-	"github.com/eerzho/event_manager/pkg/logger"
-	"github.com/eerzho/ten_tarot/internal/service"
+	"github.com/eerzho/ten_tarot/internal/handler/http/v1/response"
+	"github.com/eerzho/ten_tarot/internal/model"
+	"github.com/eerzho/ten_tarot/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
 
-type tgUser struct {
-	l             logger.Logger
-	tgUserService *service.TGUser
-}
+type (
+	tgUser struct {
+		l             logger.Logger
+		tgUserService tgUserService
+	}
 
-func newTGUser(l logger.Logger, router *gin.RouterGroup, tgUserService *service.TGUser) *tgUser {
+	tgUserService interface {
+		List(ctx context.Context, username, chatID string, page, count int) ([]model.TGUser, int, error)
+	}
+)
+
+func newTGUser(l logger.Logger, router *gin.RouterGroup, tgUserService tgUserService) *tgUser {
 	t := &tgUser{
 		l:             l,
 		tgUserService: tgUserService,
 	}
 
-	router.GET("/tg-users", t.all)
+	router.GET("/tg-users", t.list)
 
 	return t
 }
 
+// list -.
 // @Summary Show users
-// @Description Show all users list
+// @Description Show users list
 // @Tags tg-users
 // @Accept json
 // @Produce json
@@ -34,28 +43,27 @@ func newTGUser(l logger.Logger, router *gin.RouterGroup, tgUserService *service.
 // @Param chat_id query string false "ChatID"
 // @Param page query int false "Page"
 // @Param count query int false "Count"
-// @Success 200 {object} successResponse{data=[]entity.TGUser}
-// @Failure 500 {object} errorResponse
+// @Success 200 {object} response.pagination{data=[]model.TGUser}
 // @Router /tg-users [get]
-func (t *tgUser) all(ctx *gin.Context) {
-	const op = "./internal/handler/http/v1/tg_user::all"
+func (t *tgUser) list(ctx *gin.Context) {
+	const op = "./internal/handler/http/v1/tg_user::list"
 
-	page, err := strconv.Atoi(ctx.Query("page"))
-	if err != nil {
-		page = 0
-	}
-	count, err := strconv.Atoi(ctx.Query("count"))
-	if err != nil {
-		count = 0
+	page, _ := strconv.Atoi(ctx.Query("page"))
+	if page == 0 {
+		page = 1
 	}
 
-	users, err := t.tgUserService.All(ctx, ctx.Query("username"), ctx.Query("chat_id"), page, count)
+	count, _ := strconv.Atoi(ctx.Query("count"))
+	if count == 0 {
+		count = 10
+	}
+
+	users, total, err := t.tgUserService.List(ctx, ctx.Query("username"), ctx.Query("chat_id"), page, count)
 	if err != nil {
-		t.l.Error(fmt.Errorf("%s: %w", op, err))
-		errorRsp(ctx, err)
+		t.l.Error(fmt.Sprintf("%s - %s", op, err.Error()))
+		response.Fail(ctx, err)
 		return
 	}
 
-	successRsp(ctx, users)
-	return
+	response.Pagination(ctx, page, count, total, users)
 }

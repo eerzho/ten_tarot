@@ -5,36 +5,38 @@ import (
 	"math/rand"
 	"strconv"
 
-	"github.com/eerzho/ten_tarot/internal/entity"
+	"github.com/eerzho/ten_tarot/internal/model"
 )
 
-type Card struct {
-	len  int
-	deck []entity.Card
-}
+type (
+	Card struct {
+		len  int
+		deck []model.Card
+	}
+)
 
 func NewCard() *Card {
-	card := Card{}
+	c := Card{}
 
 	suits := []string{"Cups", "Pentacles", "Swords", "Wands"}
 	values := []string{"Ace", "2", "3", "4", "5", "6", "7", "8", "9", "10", "Page", "Knight", "Queen", "King"}
 
 	for _, suit := range suits {
 		for _, value := range values {
-			card.deck = append(card.deck, entity.Card{Suit: suit, Value: value})
+			c.deck = append(c.deck, model.Card{Suit: suit, Value: value})
 		}
 	}
 
 	for i := 1; i <= 22; i++ {
-		card.deck = append(card.deck, entity.Card{Suit: "Major Arcana", Value: strconv.Itoa(i)})
+		c.deck = append(c.deck, model.Card{Suit: "Major Arcana", Value: strconv.Itoa(i)})
 	}
 
-	card.len = len(card.deck)
+	c.len = len(c.deck)
 
-	return &card
+	return &c
 }
 
-func (c *Card) Shuffle(ctx context.Context, n int) []entity.Card {
+func (c *Card) Shuffle(ctx context.Context, n int) ([]model.Card, error) {
 	if n <= 0 {
 		n = 1
 	}
@@ -47,14 +49,19 @@ func (c *Card) Shuffle(ctx context.Context, n int) []entity.Card {
 		uniqI[i] = i
 	}
 
-	shuffled := make([]entity.Card, n)
+	shuffled := make([]model.Card, n)
 
 	for i := 0; i < n; i++ {
-		j := rand.Intn(len(uniqI))
-		shuffled[i] = c.deck[uniqI[j]]
-		uniqI[j] = uniqI[len(uniqI)-1]
-		uniqI = uniqI[:len(uniqI)-1]
+		select {
+		case <-ctx.Done():
+			return shuffled[:i], ctx.Err()
+		default:
+			j := rand.Intn(len(uniqI))
+			shuffled[i] = c.deck[uniqI[j]]
+			uniqI[j] = uniqI[len(uniqI)-1]
+			uniqI = uniqI[:len(uniqI)-1]
+		}
 	}
 
-	return shuffled
+	return shuffled, nil
 }

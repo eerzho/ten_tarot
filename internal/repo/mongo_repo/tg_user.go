@@ -4,14 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/eerzho/event_manager/pkg/mongo"
-	"github.com/eerzho/ten_tarot/internal/entity"
 	"github.com/eerzho/ten_tarot/internal/failure"
+	"github.com/eerzho/ten_tarot/internal/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	mongoDriver "go.mongodb.org/mongo-driver/mongo"
+	mongoD "go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -21,15 +20,100 @@ type TGUser struct {
 	*mongo.Mongo
 }
 
-func NewTGUser(m *mongo.Mongo) *TGUser {
-	return &TGUser{m}
+func NewTGUser(mg *mongo.Mongo) *TGUser {
+	return &TGUser{mg}
 }
 
-func (t *TGUser) All(ctx context.Context, username, chatID string, page, count int) ([]entity.TGUser, error) {
-	const op = "./internal/repo/mongo_repo/tg_user::All"
+func (t *TGUser) Create(ctx context.Context, user *model.TGUser) error {
+	user.ID = primitive.NewObjectID().Hex()
 
-	var users []entity.TGUser
+	result, err := t.DB.Collection(TgUserTable).InsertOne(ctx, user)
+	if err != nil {
+		return err
+	}
 
+	if _, ok := result.InsertedID.(string); !ok {
+		return failure.ErrInvalidDocument
+	}
+
+	return nil
+}
+
+func (t *TGUser) ExistsByChatID(ctx context.Context, chatID string) (bool, error) {
+	filter := bson.D{{"chat_id", chatID}}
+
+	var user model.TGUser
+	err := t.DB.Collection(TgUserTable).FindOne(ctx, filter).Decode(&user)
+	if err != nil {
+		if errors.Is(err, mongoD.ErrNoDocuments) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (t *TGUser) Count(ctx context.Context, chatID, username string) (int, error) {
+	filter := t.applyFilter(chatID, username)
+
+	count, err := t.DB.Collection(TgUserTable).CountDocuments(ctx, filter)
+	if err != nil {
+		return 0, err
+	}
+
+	return int(count), nil
+}
+
+func (t *TGUser) ByChatID(ctx context.Context, chatID string) (*model.TGUser, error) {
+	filter := bson.D{{"chat_id", chatID}}
+
+	var user model.TGUser
+	err := t.DB.Collection(TgUserTable).FindOne(ctx, filter).Decode(&user)
+	if err != nil {
+		if errors.Is(err, mongoD.ErrNoDocuments) {
+			return nil, failure.ErrNotFound
+		}
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (t *TGUser) List(ctx context.Context, username, chatID string, page, count int) ([]model.TGUser, error) {
+	var users []model.TGUser
+
+	opts := options.Find()
+	if page > 0 && count > 0 {
+		opts.SetSkip(int64((page - 1) * count))
+		opts.SetLimit(int64(count))
+	}
+
+	filter := t.applyFilter(chatID, username)
+	cursor, err := t.DB.Collection(TgUserTable).Find(ctx, filter, opts)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		_ = cursor.Close(ctx)
+	}()
+
+	for cursor.Next(ctx) {
+		var user model.TGUser
+		if err = cursor.Decode(&user); err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+
+	if err = cursor.Err(); err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+func (t *TGUser) applyFilter(chatID, username string) bson.D {
 	filter := bson.D{}
 	if username != "" {
 		filter = append(filter, bson.E{Key: "username", Value: bson.D{bson.E{Key: "$regex", Value: fmt.Sprintf("^%s", username)}}})
@@ -38,71 +122,5 @@ func (t *TGUser) All(ctx context.Context, username, chatID string, page, count i
 		filter = append(filter, bson.E{Key: "chat_id", Value: chatID})
 	}
 
-	opts := options.Find()
-	if page == 0 {
-		page = 1
-	}
-	if count == 0 {
-		count = 10
-	}
-	opts.SetSkip(int64((page - 1) * count))
-	opts.SetLimit(int64(count))
-
-	cursor, err := t.DB.Collection(TgUserTable).Find(ctx, filter, opts)
-	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
-	}
-	defer func() {
-		_ = cursor.Close(ctx)
-	}()
-
-	for cursor.Next(ctx) {
-		var user entity.TGUser
-		if err := cursor.Decode(&user); err != nil {
-			return nil, fmt.Errorf("%s: %w", op, err)
-		}
-		users = append(users, user)
-	}
-
-	if err := cursor.Err(); err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
-	}
-
-	return users, nil
-}
-
-func (t *TGUser) ByChatID(ctx context.Context, chatID string) (*entity.TGUser, error) {
-	const op = "./internal/repo/mongo_repo/tg_user::ByChatID"
-
-	var user entity.TGUser
-
-	filter := bson.D{{"chat_id", chatID}}
-
-	err := t.DB.Collection(TgUserTable).FindOne(ctx, filter).Decode(&user)
-	if err != nil {
-		if errors.Is(err, mongoDriver.ErrNoDocuments) {
-			return nil, fmt.Errorf("%s: %w", op, failure.ErrNotFound)
-		}
-		return nil, fmt.Errorf("%s: %w", op, err)
-	}
-
-	return &user, nil
-}
-
-func (t *TGUser) Create(ctx context.Context, user *entity.TGUser) error {
-	const op = "./internal/repo/mongo_repo/tg_user::Create"
-
-	user.ID = primitive.NewObjectID().Hex()
-	user.CreatedAt = time.Now().Format(time.DateTime)
-
-	result, err := t.DB.Collection(TgUserTable).InsertOne(ctx, user)
-	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
-	}
-
-	if _, ok := result.InsertedID.(string); !ok {
-		return fmt.Errorf("%s: document is nil", op)
-	}
-
-	return nil
+	return filter
 }

@@ -4,20 +4,27 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
 
-	"github.com/eerzho/event_manager/pkg/logger"
-	"github.com/eerzho/ten_tarot/internal/entity"
-	"github.com/eerzho/ten_tarot/internal/service"
+	"github.com/eerzho/ten_tarot/internal/model"
+	"github.com/eerzho/ten_tarot/pkg/logger"
 	"gopkg.in/telebot.v3"
 )
 
-type message struct {
-	l                logger.Logger
-	tgMessageService *service.TGMessage
-	tgUserService    *service.TGUser
-}
+type (
+	message struct {
+		l                logger.Logger
+		tgMessageService tgMessageService
+		tgUserService    tgUserService
+	}
 
-func newMessage(l logger.Logger, mv *middleware, bot *telebot.Bot, tgMessageService *service.TGMessage, tgUserService *service.TGUser) *message {
+	tgMessageService interface {
+		CountByTime(ctx context.Context, chatID string, st time.Time) (int, error)
+		Create(ctx context.Context, chatID, text string) (*model.TGMessage, error)
+	}
+)
+
+func newMessage(l logger.Logger, mv *middleware, bot *telebot.Bot, tgMessageService tgMessageService, tgUserService tgUserService) *message {
 	m := &message{
 		l:                l,
 		tgMessageService: tgMessageService,
@@ -32,39 +39,37 @@ func newMessage(l logger.Logger, mv *middleware, bot *telebot.Bot, tgMessageServ
 func (m *message) text(ctx telebot.Context) error {
 	const op = "./internal/handler/telegram/v1/message::text"
 
-	chatID := strconv.FormatInt(ctx.Sender().ID, 10)
+	ctxB := context.Background()
+	chatID := strconv.Itoa(int(ctx.Sender().ID))
 
-	user := entity.TGUser{
-		Username: ctx.Sender().Username,
-		ChatID:   chatID,
-	}
-	if err := m.tgUserService.Create(context.Background(), &user); err != nil {
-		m.l.Error(fmt.Errorf("%s: %w", op, err))
+	if _, err := m.tgUserService.Create(ctxB, chatID, ctx.Sender().Username); err != nil {
+		m.l.Error(fmt.Sprintf("%s - %s", op, err.Error()))
 	}
 
 	opt := &telebot.SendOptions{ReplyTo: ctx.Message(), ParseMode: telebot.ModeMarkdown}
-	if err := ctx.Send("✨Пожалуйста, подождите✨", opt); err != nil {
-		m.l.Error(fmt.Errorf("%s: %w", op, err))
+
+	waitMsg, err := ctx.Bot().Send(ctx.Sender(), "✨Пожалуйста, подождите✨", opt)
+	if err != nil {
+		m.l.Error(fmt.Sprintf("%s - %s", op, err.Error()))
 	}
 
-	msg := entity.TGMessage{
-		Text:   ctx.Message().Text,
-		ChatID: chatID,
-	}
-	if err := m.tgMessageService.Text(context.Background(), &msg); err != nil {
-		m.l.Error(fmt.Errorf("%s: %w", op, err))
+	tgMsg, err := m.tgMessageService.Create(ctxB, chatID, ctx.Message().Text)
+	if err != nil {
+		m.l.Error(fmt.Sprintf("%s - %s", op, err.Error()))
+		if err = ctx.Send("✨Пожалуйста, повторите попытку позже✨", opt); err != nil {
+			m.l.Error(fmt.Sprintf("%s - %s", op, err.Error()))
+			return err
+		}
+		return err
 	}
 
-	if msg.Answer != "" {
-		if err := ctx.Send(msg.Answer, opt); err != nil {
-			m.l.Error(fmt.Errorf("%s: %w", op, err))
-			return err
-		}
-	} else {
-		if err := ctx.Send("✨Пожалуйста, повторите попытку позже✨", opt); err != nil {
-			m.l.Error(fmt.Errorf("%s: %w", op, err))
-			return err
-		}
+	if err = ctx.Bot().Delete(waitMsg); err != nil {
+		m.l.Error(fmt.Sprintf("%s - %s", op, err.Error()))
+	}
+
+	if _, err = ctx.Bot().Send(ctx.Sender(), tgMsg.Answer, opt); err != nil {
+		m.l.Error(fmt.Sprintf("%s - %s", op, err.Error()))
+		return err
 	}
 
 	return nil

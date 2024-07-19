@@ -54,7 +54,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/v1.successResponse"
+                                    "$ref": "#/definitions/response.pagination"
                                 },
                                 {
                                     "type": "object",
@@ -62,18 +62,12 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/entity.TGMessage"
+                                                "$ref": "#/definitions/model.TGMessage"
                                             }
                                         }
                                     }
                                 }
                             ]
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/v1.errorResponse"
                         }
                     }
                 }
@@ -81,7 +75,7 @@ const docTemplate = `{
         },
         "/tg-users": {
             "get": {
-                "description": "Show all users list",
+                "description": "Show users list",
                 "consumes": [
                     "application/json"
                 ],
@@ -124,7 +118,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/v1.successResponse"
+                                    "$ref": "#/definitions/response.pagination"
                                 },
                                 {
                                     "type": "object",
@@ -132,18 +126,12 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/entity.TGUser"
+                                                "$ref": "#/definitions/model.TGUser"
                                             }
                                         }
                                     }
                                 }
                             ]
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/v1.errorResponse"
                         }
                     }
                 }
@@ -151,7 +139,21 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "entity.TGMessage": {
+        "model.Pagination": {
+            "type": "object",
+            "properties": {
+                "count_per_page": {
+                    "type": "integer"
+                },
+                "current_page": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.TGMessage": {
             "type": "object",
             "properties": {
                 "answer": {
@@ -160,7 +162,7 @@ const docTemplate = `{
                 "chat_id": {
                     "type": "string"
                 },
-                "file": {
+                "created_at": {
                     "type": "string"
                 },
                 "id": {
@@ -171,10 +173,13 @@ const docTemplate = `{
                 }
             }
         },
-        "entity.TGUser": {
+        "model.TGUser": {
             "type": "object",
             "properties": {
                 "chat_id": {
+                    "type": "string"
+                },
+                "created_at": {
                     "type": "string"
                 },
                 "id": {
@@ -185,18 +190,13 @@ const docTemplate = `{
                 }
             }
         },
-        "v1.errorResponse": {
+        "response.pagination": {
             "type": "object",
             "properties": {
-                "message": {
-                    "type": "string"
+                "data": {},
+                "pagination": {
+                    "$ref": "#/definitions/model.Pagination"
                 }
-            }
-        },
-        "v1.successResponse": {
-            "type": "object",
-            "properties": {
-                "data": {}
             }
         }
     }

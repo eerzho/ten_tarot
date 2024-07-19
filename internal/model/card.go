@@ -1,4 +1,4 @@
-package entity
+package model
 
 type Card struct {
 	Suit  string `json:"suit"`

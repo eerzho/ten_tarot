@@ -9,12 +9,10 @@ import (
 	"time"
 
 	"github.com/eerzho/event_manager/pkg/crypter"
-	"github.com/eerzho/event_manager/pkg/logger"
 	"github.com/eerzho/event_manager/pkg/mongo"
 	"github.com/eerzho/ten_tarot/config"
 	"github.com/eerzho/ten_tarot/internal/app/http"
-	"github.com/eerzho/ten_tarot/internal/repo/mongo_repo"
-	"github.com/eerzho/ten_tarot/internal/service"
+	"github.com/eerzho/ten_tarot/pkg/logger"
 )
 
 func main() {
@@ -34,18 +32,7 @@ func main() {
 	l := logger.New(cfg.Log.Level)
 	c := crypter.New(cfg.Crypter.Key)
 
-	// repo
-	tgUserRepo := mongo_repo.NewTGUser(mg)
-	tgMessageRepo := mongo_repo.NewTGMessage(mg, c)
-
-	// service
-	tgUserService := service.NewTGUser(l, tgUserRepo)
-	cardService := service.NewCard()
-	tarotService := service.NewTarot(l, cfg.Model, cfg.GPT.Token, cfg.GPT.Prompt)
-	tgMessageService := service.NewTGMessage(l, tgMessageRepo, tgUserService, cardService, tarotService)
-
-	// handler
-	httpServer := http.New(l, cfg, tgUserService, tgMessageService)
+	httpServer := http.New(l, cfg, mg, c)
 
 	stopChan := make(chan os.Signal, 1)
 	signal.Notify(stopChan, syscall.SIGINT, syscall.SIGTERM)

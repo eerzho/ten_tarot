@@ -4,30 +4,28 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/eerzho/event_manager/pkg/logger"
-	"github.com/eerzho/ten_tarot/internal/entity"
+	"github.com/eerzho/ten_tarot/internal/failure"
+	"github.com/eerzho/ten_tarot/internal/model"
 	"github.com/sashabaranov/go-openai"
 )
 
-type Tarot struct {
-	l      logger.Logger
-	openai *openai.Client
-	model  string
-	prompt string
-}
+type (
+	Tarot struct {
+		openai *openai.Client
+		model  string
+		prompt string
+	}
+)
 
-func NewTarot(l logger.Logger, model, token, prompt string) *Tarot {
+func NewTarot(model, token, prompt string) *Tarot {
 	return &Tarot{
-		l:      l,
 		openai: openai.NewClient(token),
 		model:  model,
 		prompt: prompt,
 	}
 }
 
-func (t *Tarot) Oracle(ctx context.Context, question string, hand []entity.Card) (string, error) {
-	const op = "./internal/service/tarot::Oracle"
-
+func (t *Tarot) Oracle(ctx context.Context, question string, hand []model.Card) (string, error) {
 	messages := []openai.ChatCompletionMessage{
 		{Role: openai.ChatMessageRoleSystem, Content: t.prompt},
 		{
@@ -45,16 +43,12 @@ func (t *Tarot) Oracle(ctx context.Context, question string, hand []entity.Card)
 	}
 	resp, err := t.openai.CreateChatCompletion(ctx, req)
 	if err != nil {
-		t.l.Debug(fmt.Errorf("%s: %w", op, err))
-		return "", fmt.Errorf("%s: %w", op, err)
+		return "", err
 	}
 
 	if len(resp.Choices) < 1 {
-		t.l.Debug(fmt.Errorf("%s: choices is empty", op))
-		return "", fmt.Errorf("%s: choices is empty", op)
+		return "", failure.ErrChoicesIsEmpty
 	}
 
-	choice := resp.Choices[0]
-
-	return choice.Message.Content, nil
+	return resp.Choices[0].Message.Content, nil
 }
