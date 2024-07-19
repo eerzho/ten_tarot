@@ -9,6 +9,7 @@ COPY ./cmd/http_server ./cmd/http_server
 COPY ./config ./config
 COPY ./internal ./internal
 COPY ./docs ./docs
+COPY ./pkg ./pkg
 
 RUN go build -o /app/http_server ./cmd/http_server/main.go
 

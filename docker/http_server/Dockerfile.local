@@ -10,5 +10,6 @@ COPY ./cmd/http_server ./cmd/http_server
 COPY ./config ./config
 COPY ./internal ./internal
 COPY ./docs ./docs
+COPY ./pkg ./pkg
 
 CMD ["go", "run", "./cmd/http_server"]
