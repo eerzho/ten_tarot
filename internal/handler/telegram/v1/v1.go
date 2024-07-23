@@ -14,25 +14,23 @@ import (
 
 const RID = "X-Request-ID"
 
-func NewHandler(l logger.Logger, bot *telebot.Bot, tgUserService tgUserService, tgMessageService tgMessageService) {
-	mv := newMiddleware(l, tgMessageService)
+func NewHandler(bot *telebot.Bot, tgUserService tgUserService, tgMessageService tgMessageService) {
+	mv := newMiddleware(tgMessageService)
 	bot.Use(mv.log)
 
-	newCommand(l, bot, tgUserService)
-	newMessage(l, mv, bot, tgMessageService, tgUserService)
+	newCommand(bot, tgUserService)
+	newMessage(mv, bot, tgMessageService, tgUserService)
 }
 
 type middleware struct {
-	l                logger.Logger
 	mu               sync.Mutex
 	limit            int
 	activeRequest    map[int64]struct{}
 	tgMessageService tgMessageService
 }
 
-func newMiddleware(l logger.Logger, tgMessageService tgMessageService) *middleware {
+func newMiddleware(tgMessageService tgMessageService) *middleware {
 	return &middleware{
-		l:                l,
 		limit:            10,
 		activeRequest:    make(map[int64]struct{}),
 		tgMessageService: tgMessageService,
@@ -44,13 +42,13 @@ func (m *middleware) log(next telebot.HandlerFunc) telebot.HandlerFunc {
 		id := uuid.New().String()
 		ctx.Set(RID, id)
 
-		m.l.Info(fmt.Sprintf("start: %s", id))
+		logger.Info(fmt.Sprintf("start: %s", id))
 
 		start := time.Now()
 		err := next(ctx)
 		duration := time.Since(start)
 
-		m.l.Info(fmt.Sprintf("end: %s - %.4f sec.", id, duration.Seconds()))
+		logger.Info(fmt.Sprintf("end: %s - %.4f sec.", id, duration.Seconds()))
 
 		return err
 	}
@@ -66,7 +64,7 @@ func (m *middleware) rateLimit(next telebot.HandlerFunc) telebot.HandlerFunc {
 		if exists {
 			opt := &telebot.SendOptions{ReplyTo: ctx.Message()}
 			if _, err := ctx.Bot().Send(ctx.Sender(), "✨Пожалуйста, подождите✨", opt); err != nil {
-				m.l.Error(fmt.Sprintf("%s - %s", op, err.Error()))
+				logger.Error(fmt.Sprintf("%s - %s", op, err.Error()))
 				return err
 			}
 			return nil
@@ -108,7 +106,7 @@ func (m *middleware) dailyLimit(next telebot.HandlerFunc) telebot.HandlerFunc {
 
 		count, err := m.tgMessageService.CountByTime(context.Background(), strconv.Itoa(int(ctx.Message().Chat.ID)), st)
 		if err != nil {
-			m.l.Error(fmt.Sprintf("%s - %s", op, err.Error()))
+			logger.Error(fmt.Sprintf("%s - %s", op, err.Error()))
 			return next(ctx)
 		}
 
@@ -116,7 +114,7 @@ func (m *middleware) dailyLimit(next telebot.HandlerFunc) telebot.HandlerFunc {
 			opt := &telebot.SendOptions{ReplyTo: ctx.Message(), ParseMode: telebot.ModeMarkdown}
 			if _, err = ctx.Bot().Send(ctx.Sender(), fmt.Sprintf("✨Вы превысили лимит, попробуйте позже✨\n\n\n"+
 				"🎁Скоро у вас появится возможность увеличить лимит, оплатив услугу или пригласив друзей🎁"), opt); err != nil {
-				m.l.Error(fmt.Sprintf("%s - %s", op, err.Error()))
+				logger.Error(fmt.Sprintf("%s - %s", op, err.Error()))
 				return err
 			}
 			return nil

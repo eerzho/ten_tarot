@@ -6,11 +6,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/eerzho/event_manager/pkg/crypter"
-	"github.com/eerzho/event_manager/pkg/mongo"
 	"github.com/eerzho/ten_tarot/config"
 	"github.com/eerzho/ten_tarot/internal/app/telegram"
 	"github.com/eerzho/ten_tarot/pkg/logger"
+	"github.com/eerzho/ten_tarot/pkg/mongo"
 )
 
 func main() {
@@ -27,10 +26,9 @@ func main() {
 	}
 	defer mg.Close()
 
-	l := logger.New(cfg.Log.Level)
-	c := crypter.New(cfg.Crypter.Key)
+	logger.SetUpLogger(cfg.Log.Level, cfg.Log.Type)
 
-	telegramBot, err := telegram.New(l, cfg, mg, c)
+	telegramBot, err := telegram.New(cfg, mg)
 
 	if err != nil {
 		log.Fatalf("%s: %s", op, err)

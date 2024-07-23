@@ -5,13 +5,11 @@ import (
 	"log"
 	"strings"
 
-	"github.com/eerzho/event_manager/pkg/crypter"
-	"github.com/eerzho/event_manager/pkg/mongo"
 	"github.com/eerzho/ten_tarot/config"
 	v1 "github.com/eerzho/ten_tarot/internal/handler/telegram/v1"
 	"github.com/eerzho/ten_tarot/internal/repo/mongo_repo"
 	"github.com/eerzho/ten_tarot/internal/service"
-	"github.com/eerzho/ten_tarot/pkg/logger"
+	"github.com/eerzho/ten_tarot/pkg/mongo"
 	"gopkg.in/telebot.v3"
 )
 
@@ -20,7 +18,7 @@ type Bot struct {
 	bot *telebot.Bot
 }
 
-func New(l logger.Logger, cfg *config.Config, mg *mongo.Mongo, c *crypter.Crypter) (*Bot, error) {
+func New(cfg *config.Config, mg *mongo.Mongo) (*Bot, error) {
 	url := fmt.Sprintf("%s/ten-tarot/wb", strings.Trim(cfg.Telegram.Domain, "/"))
 	settings := telebot.Settings{
 		Token: cfg.Telegram.Token,
@@ -39,7 +37,7 @@ func New(l logger.Logger, cfg *config.Config, mg *mongo.Mongo, c *crypter.Crypte
 
 	// repo
 	tgUserRepo := mongo_repo.NewTGUser(mg)
-	tgMessageRepo := mongo_repo.NewTGMessage(c, mg)
+	tgMessageRepo := mongo_repo.NewTGMessage(mg)
 
 	// service
 	tgUserService := service.NewTGUser(tgUserRepo)
@@ -48,7 +46,7 @@ func New(l logger.Logger, cfg *config.Config, mg *mongo.Mongo, c *crypter.Crypte
 	tarotService := service.NewTarot(cfg.Model, cfg.GPT.Token, cfg.GPT.Prompt)
 	tgMessageService := service.NewTGMessage(tgMessageRepo, cardService, tarotService)
 
-	v1.NewHandler(l, bot, tgUserService, tgMessageService)
+	v1.NewHandler(bot, tgUserService, tgMessageService)
 
 	return &Bot{
 		bot: bot,

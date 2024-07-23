@@ -8,11 +8,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/eerzho/event_manager/pkg/crypter"
-	"github.com/eerzho/event_manager/pkg/mongo"
 	"github.com/eerzho/ten_tarot/config"
 	"github.com/eerzho/ten_tarot/internal/app/http"
 	"github.com/eerzho/ten_tarot/pkg/logger"
+	"github.com/eerzho/ten_tarot/pkg/mongo"
 )
 
 func main() {
@@ -29,10 +28,9 @@ func main() {
 	}
 	defer mg.Close()
 
-	l := logger.New(cfg.Log.Level)
-	c := crypter.New(cfg.Crypter.Key)
+	logger.SetUpLogger(cfg.Log.Level, cfg.Log.Type)
 
-	httpServer := http.New(l, cfg, mg, c)
+	httpServer := http.New(cfg, mg)
 
 	stopChan := make(chan os.Signal, 1)
 	signal.Notify(stopChan, syscall.SIGINT, syscall.SIGTERM)

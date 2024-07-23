@@ -13,7 +13,6 @@ import (
 
 type (
 	tgMessage struct {
-		l                logger.Logger
 		tgMessageService tgMessageService
 	}
 
@@ -22,9 +21,8 @@ type (
 	}
 )
 
-func newTGMessage(l logger.Logger, router *gin.RouterGroup, tgMessageService tgMessageService) *tgMessage {
+func newTGMessage(router *gin.RouterGroup, tgMessageService tgMessageService) *tgMessage {
 	t := tgMessage{
-		l:                l,
 		tgMessageService: tgMessageService,
 	}
 
@@ -59,7 +57,7 @@ func (t *tgMessage) list(ctx *gin.Context) {
 
 	messages, total, err := t.tgMessageService.List(ctx, ctx.Query("chat_id"), page, count)
 	if err != nil {
-		t.l.Error(fmt.Sprintf("%s - %s", op, err.Error()))
+		logger.Error(fmt.Sprintf("%s - %s", op, err.Error()))
 		response.Fail(ctx, err)
 		return
 	}

@@ -12,7 +12,6 @@ import (
 
 type (
 	command struct {
-		l             logger.Logger
 		tgUserService tgUserService
 	}
 
@@ -21,9 +20,8 @@ type (
 	}
 )
 
-func newCommand(l logger.Logger, bot *telebot.Bot, tgUserService tgUserService) *command {
+func newCommand(bot *telebot.Bot, tgUserService tgUserService) *command {
 	c := &command{
-		l:             l,
 		tgUserService: tgUserService,
 	}
 
@@ -37,13 +35,13 @@ func (c *command) start(ctx telebot.Context) error {
 
 	_, err := c.tgUserService.Create(context.Background(), strconv.Itoa(int(ctx.Sender().ID)), ctx.Sender().Username)
 	if err != nil {
-		c.l.Error(fmt.Sprintf("%s - %s", op, err.Error()))
+		logger.Error(fmt.Sprintf("%s - %s", op, err.Error()))
 	}
 
 	if _, err = ctx.Bot().Send(ctx.Sender(), "Я ваш личный Таролог и готов помочь вам получить ответы на любые вопросы. "+
 		"Просто отправьте свой вопрос, и я сделаю расклад на Таро специально для вас.\n\n"+
 		"✨Будьте готовы узнать, что приготовила для вас судьба✨"); err != nil {
-		c.l.Error(fmt.Sprintf("%s - %s", op, err.Error()))
+		logger.Error(fmt.Sprintf("%s - %s", op, err.Error()))
 		return err
 	}
 

@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/eerzho/event_manager/pkg/mongo"
 	"github.com/eerzho/ten_tarot/internal/failure"
 	"github.com/eerzho/ten_tarot/internal/model"
+	"github.com/eerzho/ten_tarot/pkg/mongo"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	mongoD "go.mongodb.org/mongo-driver/mongo"

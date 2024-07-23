@@ -4,10 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/eerzho/event_manager/pkg/crypter"
-	"github.com/eerzho/event_manager/pkg/mongo"
 	"github.com/eerzho/ten_tarot/internal/failure"
 	"github.com/eerzho/ten_tarot/internal/model"
+	"github.com/eerzho/ten_tarot/pkg/mongo"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -17,14 +16,10 @@ const TgMessageTable = "tg_messages"
 
 type TGMessage struct {
 	*mongo.Mongo
-	c *crypter.Crypter
 }
 
-func NewTGMessage(c *crypter.Crypter, mg *mongo.Mongo) *TGMessage {
-	return &TGMessage{
-		mg,
-		c,
-	}
+func NewTGMessage(mg *mongo.Mongo) *TGMessage {
+	return &TGMessage{mg}
 }
 
 func (t *TGMessage) Count(ctx context.Context, chatID string) (int, error) {
@@ -39,15 +34,6 @@ func (t *TGMessage) Count(ctx context.Context, chatID string) (int, error) {
 
 func (t *TGMessage) Create(ctx context.Context, message *model.TGMessage) error {
 	message.ID = primitive.NewObjectID().Hex()
-
-	originalText := message.Text
-	originalAnswer := message.Answer
-	defer func() {
-		message.Text = originalText
-		message.Answer = originalAnswer
-	}()
-	message.Text = t.c.Encrypt(originalText)
-	message.Answer = t.c.Encrypt(originalAnswer)
 
 	result, err := t.DB.Collection(TgMessageTable).InsertOne(ctx, message)
 	if err != nil {

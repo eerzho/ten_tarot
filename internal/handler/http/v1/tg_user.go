@@ -13,7 +13,6 @@ import (
 
 type (
 	tgUser struct {
-		l             logger.Logger
 		tgUserService tgUserService
 	}
 
@@ -22,9 +21,8 @@ type (
 	}
 )
 
-func newTGUser(l logger.Logger, router *gin.RouterGroup, tgUserService tgUserService) *tgUser {
+func newTGUser(router *gin.RouterGroup, tgUserService tgUserService) *tgUser {
 	t := &tgUser{
-		l:             l,
 		tgUserService: tgUserService,
 	}
 
@@ -60,7 +58,7 @@ func (t *tgUser) list(ctx *gin.Context) {
 
 	users, total, err := t.tgUserService.List(ctx, ctx.Query("username"), ctx.Query("chat_id"), page, count)
 	if err != nil {
-		t.l.Error(fmt.Sprintf("%s - %s", op, err.Error()))
+		logger.Error(fmt.Sprintf("%s - %s", op, err.Error()))
 		response.Fail(ctx, err)
 		return
 	}

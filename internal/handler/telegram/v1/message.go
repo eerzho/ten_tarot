@@ -13,7 +13,6 @@ import (
 
 type (
 	message struct {
-		l                logger.Logger
 		tgMessageService tgMessageService
 		tgUserService    tgUserService
 	}
@@ -24,9 +23,8 @@ type (
 	}
 )
 
-func newMessage(l logger.Logger, mv *middleware, bot *telebot.Bot, tgMessageService tgMessageService, tgUserService tgUserService) *message {
+func newMessage(mv *middleware, bot *telebot.Bot, tgMessageService tgMessageService, tgUserService tgUserService) *message {
 	m := &message{
-		l:                l,
 		tgMessageService: tgMessageService,
 		tgUserService:    tgUserService,
 	}
@@ -43,32 +41,32 @@ func (m *message) text(ctx telebot.Context) error {
 	chatID := strconv.Itoa(int(ctx.Sender().ID))
 
 	if _, err := m.tgUserService.Create(ctxB, chatID, ctx.Sender().Username); err != nil {
-		m.l.Error(fmt.Sprintf("%s - %s", op, err.Error()))
+		logger.Warn(fmt.Sprintf("%s - %s", op, err.Error()))
 	}
 
 	opt := &telebot.SendOptions{ReplyTo: ctx.Message(), ParseMode: telebot.ModeMarkdown}
 
 	waitMsg, err := ctx.Bot().Send(ctx.Sender(), "✨Пожалуйста, подождите✨", opt)
 	if err != nil {
-		m.l.Error(fmt.Sprintf("%s - %s", op, err.Error()))
+		logger.Warn(fmt.Sprintf("%s - %s", op, err.Error()))
 	}
 
 	tgMsg, err := m.tgMessageService.Create(ctxB, chatID, ctx.Message().Text)
 	if err != nil {
-		m.l.Error(fmt.Sprintf("%s - %s", op, err.Error()))
+		logger.Error(fmt.Sprintf("%s - %s", op, err.Error()))
 		if err = ctx.Send("✨Пожалуйста, повторите попытку позже✨", opt); err != nil {
-			m.l.Error(fmt.Sprintf("%s - %s", op, err.Error()))
+			logger.Error(fmt.Sprintf("%s - %s", op, err.Error()))
 			return err
 		}
 		return err
 	}
 
 	if err = ctx.Bot().Delete(waitMsg); err != nil {
-		m.l.Error(fmt.Sprintf("%s - %s", op, err.Error()))
+		logger.Warn(fmt.Sprintf("%s - %s", op, err.Error()))
 	}
 
 	if _, err = ctx.Bot().Send(ctx.Sender(), tgMsg.Answer, opt); err != nil {
-		m.l.Error(fmt.Sprintf("%s - %s", op, err.Error()))
+		logger.Error(fmt.Sprintf("%s - %s", op, err.Error()))
 		return err
 	}
 

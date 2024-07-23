@@ -18,6 +18,7 @@ type (
 
 	Log struct {
 		Level string `env:"LOG_LEVEL" env-default:"info"`
+		Type  string `env:"LOG_TYPE" env-default:"text"`
 	}
 
 	Crypter struct {

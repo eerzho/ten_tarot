@@ -5,13 +5,11 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/eerzho/event_manager/pkg/crypter"
-	"github.com/eerzho/event_manager/pkg/mongo"
 	"github.com/eerzho/ten_tarot/config"
 	"github.com/eerzho/ten_tarot/internal/handler/http/v1"
 	"github.com/eerzho/ten_tarot/internal/repo/mongo_repo"
 	"github.com/eerzho/ten_tarot/internal/service"
-	"github.com/eerzho/ten_tarot/pkg/logger"
+	"github.com/eerzho/ten_tarot/pkg/mongo"
 	"github.com/gin-gonic/gin"
 )
 
@@ -19,13 +17,13 @@ type Server struct {
 	server *http.Server
 }
 
-func New(l logger.Logger, cfg *config.Config, mg *mongo.Mongo, c *crypter.Crypter) *Server {
+func New(cfg *config.Config, mg *mongo.Mongo) *Server {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
 
 	// repo
 	tgUserRepo := mongo_repo.NewTGUser(mg)
-	tgMessageRepo := mongo_repo.NewTGMessage(c, mg)
+	tgMessageRepo := mongo_repo.NewTGMessage(mg)
 
 	// service
 	tgUserService := service.NewTGUser(tgUserRepo)
@@ -34,7 +32,7 @@ func New(l logger.Logger, cfg *config.Config, mg *mongo.Mongo, c *crypter.Crypte
 	tgMessageService := service.NewTGMessage(tgMessageRepo, cardService, tarotService)
 
 	// handler
-	v1.NewHandler(l, router, tgUserService, tgMessageService)
+	v1.NewHandler(router, tgUserService, tgMessageService)
 
 	server := &http.Server{
 		Addr:    ":" + cfg.HTTP.Port,
