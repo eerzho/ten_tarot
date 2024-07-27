@@ -14,12 +14,20 @@ import (
 
 const RID = "X-Request-ID"
 
-func NewHandler(bot *telebot.Bot, tgUserService tgUserService, tgMessageService tgMessageService) {
-	mv := newMiddleware(tgMessageService)
+func NewHandler(
+	bot *telebot.Bot,
+	tgUserService tgUserService,
+	tgMessageService tgMessageService,
+	tgButtonService tgButtonService,
+	tgInvoiceService tgInvoiceService,
+) {
+	mv := newMiddleware(tgMessageService, tgButtonService, tgUserService)
 	bot.Use(mv.log)
 
 	newCommand(bot, tgUserService)
 	newMessage(mv, bot, tgMessageService, tgUserService)
+	newButton(bot, tgButtonService, tgInvoiceService)
+	newPayment(bot, tgInvoiceService, tgUserService)
 }
 
 type middleware struct {
@@ -27,13 +35,21 @@ type middleware struct {
 	limit            int
 	activeRequest    map[int64]struct{}
 	tgMessageService tgMessageService
+	tgButtonService  tgButtonService
+	tgUserService    tgUserService
 }
 
-func newMiddleware(tgMessageService tgMessageService) *middleware {
+func newMiddleware(
+	tgMessageService tgMessageService,
+	tgButtonService tgButtonService,
+	tgUserService tgUserService,
+) *middleware {
 	return &middleware{
-		limit:            10,
+		limit:            3,
 		activeRequest:    make(map[int64]struct{}),
 		tgMessageService: tgMessageService,
+		tgButtonService:  tgButtonService,
+		tgUserService:    tgUserService,
 	}
 }
 
@@ -102,22 +118,44 @@ func (m *middleware) dailyLimit(next telebot.HandlerFunc) telebot.HandlerFunc {
 	return func(ctx telebot.Context) error {
 		const op = "./internal/handler/telegram/v1/middleware::dailyLimit"
 
-		st := time.Now().Add(-24 * time.Hour)
+		c := context.Background()
+		monthAgo := time.Now().AddDate(0, -1, 0)
 
-		count, err := m.tgMessageService.CountByTime(context.Background(), strconv.Itoa(int(ctx.Message().Chat.ID)), st)
+		chatID := strconv.Itoa(int(ctx.Message().Chat.ID))
+		count, err := m.tgMessageService.CountByTime(c, chatID, monthAgo)
 		if err != nil {
 			logger.Error(fmt.Sprintf("%s - %s", op, err.Error()))
 			return next(ctx)
 		}
 
 		if count >= m.limit {
-			opt := &telebot.SendOptions{ReplyTo: ctx.Message(), ParseMode: telebot.ModeMarkdown}
-			if _, err = ctx.Bot().Send(ctx.Sender(), fmt.Sprintf("✨Вы превысили лимит, попробуйте позже✨\n\n\n"+
-				"🎁Скоро у вас появится возможность увеличить лимит, оплатив услугу или пригласив друзей🎁"), opt); err != nil {
-				logger.Error(fmt.Sprintf("%s - %s", op, err.Error()))
+			senderID := strconv.Itoa(int(ctx.Sender().ID))
+			user, err := m.tgUserService.ByChatID(c, senderID)
+			if err != nil {
+				logger.OPError(op, err)
 				return err
 			}
-			return nil
+
+			if user.QuestionCount == 0 {
+				opt := telebot.ReplyMarkup{
+					InlineKeyboard: m.tgButtonService.OverLimit(c),
+				}
+
+				if _, err := ctx.Bot().Send(ctx.Sender(), "✨Вы превысили лимит✨", &opt); err != nil {
+					logger.Error(fmt.Sprintf("%s - %s", op, err.Error()))
+					return err
+				}
+
+				return nil
+			}
+
+			user.QuestionCount--
+			if _, err := m.tgUserService.UpdateQCByChatID(c, user.ChatID, user.QuestionCount); err != nil {
+				logger.OPError(op, err)
+				return err
+			}
+
+			return next(ctx)
 		}
 
 		return next(ctx)

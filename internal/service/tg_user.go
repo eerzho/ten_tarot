@@ -14,6 +14,7 @@ type (
 
 	tgUserRepo interface {
 		Create(ctx context.Context, user *model.TGUser) error
+		Update(ctx context.Context, user *model.TGUser) error
 		ExistsByChatID(ctx context.Context, chatID string) (bool, error)
 		Count(ctx context.Context, chatID, username string) (int, error)
 		ByChatID(ctx context.Context, chatID string) (*model.TGUser, error)
@@ -28,7 +29,7 @@ func NewTGUser(repo tgUserRepo) *TGUser {
 func (t *TGUser) Create(ctx context.Context, chatID, username string) (*model.TGUser, error) {
 	exists, _ := t.existsByChatID(ctx, chatID)
 	if exists {
-		user, err := t.byChatID(ctx, chatID)
+		user, err := t.ByChatID(ctx, chatID)
 		if err != nil {
 			return nil, err
 		}
@@ -47,6 +48,29 @@ func (t *TGUser) Create(ctx context.Context, chatID, username string) (*model.TG
 	}
 
 	return &user, nil
+}
+
+func (t *TGUser) UpdateQCByChatID(ctx context.Context, chatID string, qc int) (*model.TGUser, error) {
+	user, err := t.ByChatID(ctx, chatID)
+	if err != nil {
+		return nil, err
+	}
+
+	user.QuestionCount = qc
+	if err = t.repo.Update(ctx, user); err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func (t *TGUser) ByChatID(ctx context.Context, chatID string) (*model.TGUser, error) {
+	user, err := t.repo.ByChatID(ctx, chatID)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }
 
 func (t *TGUser) List(ctx context.Context, username, chatID string, page, count int) ([]model.TGUser, int, error) {
@@ -70,15 +94,6 @@ func (t *TGUser) existsByChatID(ctx context.Context, chatID string) (bool, error
 	}
 
 	return exists, nil
-}
-
-func (t *TGUser) byChatID(ctx context.Context, chatID string) (*model.TGUser, error) {
-	user, err := t.repo.ByChatID(ctx, chatID)
-	if err != nil {
-		return nil, err
-	}
-
-	return user, nil
 }
 
 func (t *TGUser) count(ctx context.Context, chatID, username string) (int, error) {
