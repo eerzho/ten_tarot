@@ -42,11 +42,11 @@ func (t *TGButton) Prices(ctx context.Context) [][]telebot.InlineButton {
 				Text:   "10 вопросов - 85 ⭐️",
 				Data:   "10:85",
 			},
-			telebot.InlineButton{
-				Unique: constant.SelectQuestionsAmount,
-				Text:   "Test",
-				Data:   "1:1",
-			},
+			//telebot.InlineButton{
+			//	Unique: constant.SelectQuestionsAmount,
+			//	Text:   "Test",
+			//	Data:   "1:1",
+			//},
 		},
 	}
 
