@@ -55,7 +55,7 @@ func (b *button) buyMoreQuestions(ctx telebot.Context) error {
 		InlineKeyboard: b.tgButtonService.Prices(context.Background()),
 	}
 
-	if err := ctx.Send("Выберите количество вопросов", &opt); err != nil {
+	if err := ctx.Send("Выберите количество вопросов 🤪", &opt); err != nil {
 		logger.OPError(op, err)
 		return err
 	}

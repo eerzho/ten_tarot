@@ -48,7 +48,7 @@ func (p *payment) checkout(ctx telebot.Context) error {
 		context.Background(),
 		preCQ.Payload,
 	) {
-		err = ctx.Bot().Accept(preCQ, "Вы уже оплатили этот счет")
+		err = ctx.Bot().Accept(preCQ, "Вы уже оплатили 🥳")
 	} else {
 		err = ctx.Bot().Accept(preCQ)
 	}
@@ -83,7 +83,7 @@ func (p *payment) payment(ctx telebot.Context) error {
 		return err
 	}
 
-	if err = ctx.Send(fmt.Sprintf("У вас %d вопросов", user.QuestionCount)); err != nil {
+	if err = ctx.Send(fmt.Sprintf("У вас %d вопросов 🤯", user.QuestionCount)); err != nil {
 		logger.OPError(op, err)
 		return err
 	}
