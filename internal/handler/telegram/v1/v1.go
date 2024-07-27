@@ -130,7 +130,7 @@ func (m *middleware) dailyLimit(next telebot.HandlerFunc) telebot.HandlerFunc {
 
 		if count >= m.limit {
 			senderID := strconv.Itoa(int(ctx.Sender().ID))
-			user, err := m.tgUserService.ByChatID(c, senderID)
+			user, err := m.tgUserService.Create(c, senderID, ctx.Sender().Username)
 			if err != nil {
 				logger.OPError(op, err)
 				return err
