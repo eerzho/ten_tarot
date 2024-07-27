@@ -16,7 +16,9 @@ type (
 	}
 
 	tgUserService interface {
+		ByChatID(ctx context.Context, chatID string) (*model.TGUser, error)
 		Create(ctx context.Context, chatID, username string) (*model.TGUser, error)
+		UpdateQCByChatID(ctx context.Context, chatID string, qc int) (*model.TGUser, error)
 	}
 )
 

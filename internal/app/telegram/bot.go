@@ -28,6 +28,7 @@ func New(cfg *config.Config, mg *mongo.Mongo) (*Bot, error) {
 				PublicURL: url,
 			},
 		},
+		OnError: nil,
 	}
 
 	bot, err := telebot.NewBot(settings)
@@ -38,6 +39,7 @@ func New(cfg *config.Config, mg *mongo.Mongo) (*Bot, error) {
 	// repo
 	tgUserRepo := mongo_repo.NewTGUser(mg)
 	tgMessageRepo := mongo_repo.NewTGMessage(mg)
+	tgInvoiceRepo := mongo_repo.NewTGInvoice(mg)
 
 	// service
 	tgUserService := service.NewTGUser(tgUserRepo)
@@ -45,8 +47,10 @@ func New(cfg *config.Config, mg *mongo.Mongo) (*Bot, error) {
 	//tarotService := service.NewTarotMock()
 	tarotService := service.NewTarot(cfg.Model, cfg.GPT.Token, cfg.GPT.Prompt)
 	tgMessageService := service.NewTGMessage(tgMessageRepo, cardService, tarotService)
+	tgButtonService := service.NewTGButton()
+	tgInvoiceService := service.NewTGInvoice(tgInvoiceRepo)
 
-	v1.NewHandler(bot, tgUserService, tgMessageService)
+	v1.NewHandler(bot, tgUserService, tgMessageService, tgButtonService, tgInvoiceService)
 
 	return &Bot{
 		bot: bot,

@@ -39,6 +39,22 @@ func (t *TGUser) Create(ctx context.Context, user *model.TGUser) error {
 	return nil
 }
 
+func (t *TGUser) Update(ctx context.Context, user *model.TGUser) error {
+	filter := bson.M{"_id": user.ID}
+	update := bson.M{"$set": user}
+
+	result, err := t.DB.Collection(TgUserTable).UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+
+	if result.MatchedCount == 0 {
+		return failure.ErrNotFound
+	}
+
+	return nil
+}
+
 func (t *TGUser) ExistsByChatID(ctx context.Context, chatID string) (bool, error) {
 	filter := bson.D{{"chat_id", chatID}}
 

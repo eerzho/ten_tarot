@@ -2,6 +2,7 @@ package logger
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"strings"
@@ -65,6 +66,10 @@ func Warn(message string, args ...Attr) {
 
 func Error(message string, args ...Attr) {
 	log(slog.LevelError, message, args...)
+}
+
+func OPError(op string, err error, args ...Attr) {
+	Error(fmt.Sprintf("%s - %s", op, err), args...)
 }
 
 func Fatal(message string, args ...Attr) {
