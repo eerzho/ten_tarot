@@ -60,8 +60,16 @@ func Info(message string, args ...Attr) {
 	log(slog.LevelInfo, message, args...)
 }
 
+func OPInfo(op, message string, args ...Attr) {
+	Info(fmt.Sprintf("%s - %s", op, message), args...)
+}
+
 func Warn(message string, args ...Attr) {
 	log(slog.LevelWarn, message, args...)
+}
+
+func OPWarn(op string, err error, args ...Attr) {
+	Warn(fmt.Sprintf("%s - %s", op, err.Error()), args...)
 }
 
 func Error(message string, args ...Attr) {

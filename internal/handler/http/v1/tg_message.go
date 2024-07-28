@@ -1,12 +1,9 @@
 package v1
 
 import (
-	"context"
-	"fmt"
 	"strconv"
 
 	"github.com/eerzho/ten_tarot/internal/handler/http/v1/response"
-	"github.com/eerzho/ten_tarot/internal/model"
 	"github.com/eerzho/ten_tarot/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
@@ -15,10 +12,6 @@ type (
 	tgMessage struct {
 		tgMessageService tgMessageService
 	}
-
-	tgMessageService interface {
-		List(ctx context.Context, chatID string, page, count int) ([]model.TGMessage, int, error)
-	}
 )
 
 func newTGMessage(router *gin.RouterGroup, tgMessageService tgMessageService) *tgMessage {
@@ -26,14 +19,13 @@ func newTGMessage(router *gin.RouterGroup, tgMessageService tgMessageService) *t
 		tgMessageService: tgMessageService,
 	}
 
-	router.GET("/tg-messages", t.list)
+	router.GET("/tg-messages", t.getList)
 
 	return &t
 }
 
-// list -.
 // @Summary Show messages
-// @Description Show all messages list
+// @Description Show messages list
 // @Tags tg-messages
 // @Accept json
 // @Produce json
@@ -42,9 +34,10 @@ func newTGMessage(router *gin.RouterGroup, tgMessageService tgMessageService) *t
 // @Param count query int false "Count"
 // @Success 200 {object} response.pagination{data=[]model.TGMessage}
 // @Router /tg-messages [get]
-func (t *tgMessage) list(ctx *gin.Context) {
-	const op = "./internal/handler/http/v1/tg_message::list"
+func (t *tgMessage) getList(ctx *gin.Context) {
+	const op = "handler.http.v1.tgMessage.getList"
 
+	// todo перемести эту логику в service
 	page, _ := strconv.Atoi(ctx.Query("page"))
 	if page == 0 {
 		page = 1
@@ -55,9 +48,14 @@ func (t *tgMessage) list(ctx *gin.Context) {
 		count = 10
 	}
 
-	messages, total, err := t.tgMessageService.List(ctx, ctx.Query("chat_id"), page, count)
+	messages, total, err := t.tgMessageService.GetList(
+		ctx,
+		ctx.Query("chat_id"),
+		page,
+		count,
+	)
 	if err != nil {
-		logger.Error(fmt.Sprintf("%s - %s", op, err.Error()))
+		logger.OPError(op, err)
 		response.Fail(ctx, err)
 		return
 	}

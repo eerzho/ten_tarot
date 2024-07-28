@@ -2,84 +2,49 @@ package service
 
 import (
 	"context"
-	"time"
 
 	"github.com/eerzho/ten_tarot/internal/model"
+	"github.com/eerzho/ten_tarot/pkg/logger"
 )
 
 type (
 	TGUser struct {
-		repo tgUserRepo
-	}
-
-	tgUserRepo interface {
-		Create(ctx context.Context, user *model.TGUser) error
-		Update(ctx context.Context, user *model.TGUser) error
-		ExistsByChatID(ctx context.Context, chatID string) (bool, error)
-		Count(ctx context.Context, chatID, username string) (int, error)
-		ByChatID(ctx context.Context, chatID string) (*model.TGUser, error)
-		List(ctx context.Context, chatID, username string, page, count int) ([]model.TGUser, error)
+		tgUserRepo tgUserRepo
 	}
 )
 
-func NewTGUser(repo tgUserRepo) *TGUser {
-	return &TGUser{repo: repo}
+func NewTGUser(tgUserRepo tgUserRepo) *TGUser {
+	return &TGUser{
+		tgUserRepo: tgUserRepo,
+	}
 }
 
-func (t *TGUser) Create(ctx context.Context, chatID, username string) (*model.TGUser, error) {
-	exists, _ := t.existsByChatID(ctx, chatID)
-	if exists {
-		user, err := t.ByChatID(ctx, chatID)
-		if err != nil {
-			return nil, err
-		}
+func (t *TGUser) GetList(ctx context.Context, username, chatID string, page, count int) ([]model.TGUser, int, error) {
+	const op = "service.TGUser.GetList"
+	logger.Debug(
+		op,
+		logger.Any("username", username),
+		logger.Any("chatID", chatID),
+		logger.Any("page", page),
+		logger.Any("count", count),
+	)
 
-		return user, nil
-	}
-
-	user := model.TGUser{
-		ChatID:    chatID,
-		Username:  username,
-		CreatedAt: time.Now().Format(time.DateTime),
-	}
-
-	if err := t.repo.Create(ctx, &user); err != nil {
-		return nil, err
-	}
-
-	return &user, nil
-}
-
-func (t *TGUser) UpdateQCByChatID(ctx context.Context, chatID string, qc int) (*model.TGUser, error) {
-	user, err := t.ByChatID(ctx, chatID)
-	if err != nil {
-		return nil, err
-	}
-
-	user.QuestionCount = qc
-	if err = t.repo.Update(ctx, user); err != nil {
-		return nil, err
-	}
-
-	return user, nil
-}
-
-func (t *TGUser) ByChatID(ctx context.Context, chatID string) (*model.TGUser, error) {
-	user, err := t.repo.ByChatID(ctx, chatID)
-	if err != nil {
-		return nil, err
-	}
-
-	return user, nil
-}
-
-func (t *TGUser) List(ctx context.Context, username, chatID string, page, count int) ([]model.TGUser, int, error) {
-	users, err := t.repo.List(ctx, username, chatID, page, count)
+	users, err := t.tgUserRepo.GetList(
+		ctx,
+		username,
+		chatID,
+		page,
+		count,
+	)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	total, err := t.count(ctx, chatID, username)
+	total, err := t.tgUserRepo.GetListCount(
+		ctx,
+		chatID,
+		username,
+	)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -87,20 +52,63 @@ func (t *TGUser) List(ctx context.Context, username, chatID string, page, count 
 	return users, total, nil
 }
 
-func (t *TGUser) existsByChatID(ctx context.Context, chatID string) (bool, error) {
-	exists, err := t.repo.ExistsByChatID(ctx, chatID)
+func (t *TGUser) GetByChatID(ctx context.Context, chatID string) (*model.TGUser, error) {
+	const op = "service.TGUser.GetByChatID"
+	logger.Debug(op, logger.Any("chatID", chatID))
+
+	user, err := t.tgUserRepo.GetByChatID(ctx, chatID)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
-	return exists, nil
+	return user, nil
 }
 
-func (t *TGUser) count(ctx context.Context, chatID, username string) (int, error) {
-	count, err := t.repo.Count(ctx, chatID, username)
-	if err != nil {
-		return 0, err
+func (t *TGUser) GetOrCreateByChatIDUsername(ctx context.Context, chatID, username string) (*model.TGUser, error) {
+	const op = "service.TGUser.GetOrCreateByChatIDUsername"
+	logger.Debug(op,
+		logger.Any("chatID", chatID),
+		logger.Any("username", username),
+	)
+
+	exists := t.tgUserRepo.ExistsByChatID(ctx, chatID)
+	if exists {
+		user, err := t.tgUserRepo.GetByChatID(ctx, chatID)
+		if err != nil {
+			return nil, err
+		}
+		return user, nil
 	}
 
-	return count, nil
+	user := model.TGUser{
+		ChatID:   chatID,
+		Username: username,
+	}
+
+	if err := t.tgUserRepo.Create(ctx, &user); err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (t *TGUser) UpdateByChatIDQC(ctx context.Context, chatID string, questionCount int) (*model.TGUser, error) {
+	const op = "service.TGUser.UpdateByChatIDQC"
+	logger.Debug(
+		op,
+		logger.Any("chatID", chatID),
+		logger.Any("questionCount", questionCount),
+	)
+
+	user, err := t.tgUserRepo.GetByChatID(ctx, chatID)
+	if err != nil {
+		return nil, err
+	}
+
+	user.QuestionCount = questionCount
+	if err = t.tgUserRepo.Update(ctx, user); err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }

@@ -5,45 +5,38 @@ import (
 	"time"
 
 	"github.com/eerzho/ten_tarot/internal/model"
+	"github.com/eerzho/ten_tarot/pkg/logger"
 )
 
 type (
 	TGMessage struct {
-		repo         tgMessageRepo
-		cardService  cardService
-		tarotService tarotService
-	}
-
-	tgMessageRepo interface {
-		Count(ctx context.Context, chatID string) (int, error)
-		Create(ctx context.Context, message *model.TGMessage) error
-		CountByTime(ctx context.Context, chatID string, st time.Time) (int, error)
-		List(ctx context.Context, chatID string, page, count int) ([]model.TGMessage, error)
-	}
-
-	cardService interface {
-		Shuffle(ctx context.Context, n int) ([]model.Card, error)
-	}
-
-	tarotService interface {
-		Oracle(ctx context.Context, question string, hand []model.Card) (string, error)
+		tgMessageRepo tgMessageRepo
+		deckService   deckService
+		tarotService  tarotService
 	}
 )
 
 func NewTGMessage(
-	repo tgMessageRepo,
-	cardService cardService,
+	tgMessageRepo tgMessageRepo,
+	deckService deckService,
 	tarotService tarotService,
 ) *TGMessage {
 	return &TGMessage{
-		repo:         repo,
-		cardService:  cardService,
-		tarotService: tarotService,
+		tgMessageRepo: tgMessageRepo,
+		deckService:   deckService,
+		tarotService:  tarotService,
 	}
 }
 
-func (t *TGMessage) CountByTime(ctx context.Context, chatID string, st time.Time) (int, error) {
-	count, err := t.repo.CountByTime(ctx, chatID, st)
+func (t *TGMessage) CountByChatIDFromTime(ctx context.Context, chatID string, fromTime time.Time) (int, error) {
+	const op = "service.TGMessage.CountByChatIDFromTime"
+	logger.Debug(
+		op,
+		logger.Any("chatID", chatID),
+		logger.Any("fromTime", fromTime),
+	)
+
+	count, err := t.tgMessageRepo.CountByChatIDFromTime(ctx, chatID, fromTime)
 	if err != nil {
 		return 0, err
 	}
@@ -51,37 +44,26 @@ func (t *TGMessage) CountByTime(ctx context.Context, chatID string, st time.Time
 	return count, nil
 }
 
-func (t *TGMessage) Create(ctx context.Context, chatID, text string) (*model.TGMessage, error) {
-	hand, err := t.cardService.Shuffle(ctx, 5)
-	if err != nil {
-		return nil, err
-	}
+func (t *TGMessage) GetList(ctx context.Context, chatID string, page, count int) ([]model.TGMessage, int, error) {
+	const op = "service.TGMessage.GetList"
+	logger.Debug(
+		op,
+		logger.Any("chatID", chatID),
+		logger.Any("page", page),
+		logger.Any("count", count),
+	)
 
-	answer, err := t.tarotService.Oracle(ctx, text, hand)
-	if err != nil {
-		return nil, err
-	}
-
-	message := model.TGMessage{
-		ChatID:    chatID,
-		Text:      text,
-		Answer:    answer,
-		CreatedAt: time.Now().Format(time.DateTime),
-	}
-	if err = t.repo.Create(ctx, &message); err != nil {
-		return nil, err
-	}
-
-	return &message, nil
-}
-
-func (t *TGMessage) List(ctx context.Context, chatID string, page, count int) ([]model.TGMessage, int, error) {
-	messages, err := t.repo.List(ctx, chatID, page, count)
+	messages, err := t.tgMessageRepo.GetList(
+		ctx,
+		chatID,
+		page,
+		count,
+	)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	total, err := t.count(ctx, chatID)
+	total, err := t.tgMessageRepo.GetListCount(ctx, chatID)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -89,11 +71,32 @@ func (t *TGMessage) List(ctx context.Context, chatID string, page, count int) ([
 	return messages, total, nil
 }
 
-func (t *TGMessage) count(ctx context.Context, chatID string) (int, error) {
-	count, err := t.repo.Count(ctx, chatID)
+func (t *TGMessage) CreateByChatIDUQ(ctx context.Context, chatID, userQuestion string) (*model.TGMessage, error) {
+	const op = "service.TGMessage.CreateByChatIDUQ"
+	logger.Debug(
+		op,
+		logger.Any("chatID", chatID),
+		logger.Any("userQuestion", userQuestion),
+	)
+
+	hand, err := t.deckService.Shuffle(ctx, 5)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	return count, nil
+	botAnswer, err := t.tarotService.Oracle(ctx, userQuestion, hand)
+	if err != nil {
+		return nil, err
+	}
+
+	message := model.TGMessage{
+		ChatID:       chatID,
+		BotAnswer:    botAnswer,
+		UserQuestion: userQuestion,
+	}
+	if err = t.tgMessageRepo.Create(ctx, &message); err != nil {
+		return nil, err
+	}
+
+	return &message, nil
 }

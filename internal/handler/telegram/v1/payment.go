@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/eerzho/ten_tarot/internal/model"
 	"github.com/eerzho/ten_tarot/pkg/logger"
 	"gopkg.in/telebot.v3"
 )
@@ -14,12 +13,6 @@ type (
 	payment struct {
 		tgInvoiceService tgInvoiceService
 		tgUserService    tgUserService
-	}
-
-	tgInvoiceService interface {
-		IsValidByID(ctx context.Context, id string) bool
-		CreateByData(ctx context.Context, chatID, data string) (*model.TGInvoice, error)
-		UpdateByIDChargeID(ctx context.Context, id, chargeID string) (*model.TGInvoice, error)
 	}
 )
 
@@ -40,7 +33,7 @@ func newPayment(
 }
 
 func (p *payment) checkout(ctx telebot.Context) error {
-	const op = "./internal/handler/telegram/v1/payment::checkout"
+	const op = "handler.telegram.v1.payment.checkout"
 
 	var err error
 	preCQ := ctx.PreCheckoutQuery()
@@ -62,7 +55,7 @@ func (p *payment) checkout(ctx telebot.Context) error {
 }
 
 func (p *payment) payment(ctx telebot.Context) error {
-	const op = "./internal/handler/telegram/v1/payment::payment"
+	const op = "handler.telegram.v1.payment.payment"
 
 	invoice, err := p.tgInvoiceService.UpdateByIDChargeID(
 		context.Background(),
@@ -74,7 +67,7 @@ func (p *payment) payment(ctx telebot.Context) error {
 		return err
 	}
 
-	user, err := p.tgUserService.UpdateQCByChatID(
+	user, err := p.tgUserService.UpdateByChatIDQC(
 		context.Background(),
 		strconv.Itoa(int(ctx.Sender().ID)), invoice.QuestionCount,
 	)

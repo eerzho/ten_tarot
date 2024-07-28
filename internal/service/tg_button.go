@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/eerzho/ten_tarot/internal/constant"
+	"github.com/eerzho/ten_tarot/pkg/logger"
 	"gopkg.in/telebot.v3"
 )
 
@@ -17,6 +18,9 @@ func NewTGButton() *TGButton {
 }
 
 func (t *TGButton) OverLimit(ctx context.Context) [][]telebot.InlineButton {
+	const op = "service.TGButton.OverLimit"
+	logger.Debug(op)
+
 	buttons := [][]telebot.InlineButton{
 		{
 			telebot.InlineButton{
@@ -30,6 +34,9 @@ func (t *TGButton) OverLimit(ctx context.Context) [][]telebot.InlineButton {
 }
 
 func (t *TGButton) Prices(ctx context.Context) [][]telebot.InlineButton {
+	const op = "service.TGButton.Prices"
+	logger.Debug(op)
+
 	buttons := [][]telebot.InlineButton{
 		{
 			telebot.InlineButton{

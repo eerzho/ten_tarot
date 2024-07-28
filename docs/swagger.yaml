@@ -11,7 +11,7 @@ definitions:
     type: object
   model.TGMessage:
     properties:
-      answer:
+      bot_answer:
         type: string
       chat_id:
         type: string
@@ -19,7 +19,7 @@ definitions:
         type: string
       id:
         type: string
-      text:
+      user_question:
         type: string
     type: object
   model.TGUser:
@@ -30,6 +30,8 @@ definitions:
         type: string
       id:
         type: string
+      question_count:
+        type: integer
       username:
         type: string
     type: object
@@ -48,7 +50,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Show all messages list
+      description: Show messages list
       parameters:
       - description: ChatID
         in: query

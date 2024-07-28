@@ -7,17 +7,12 @@ import (
 
 	"github.com/eerzho/ten_tarot/internal/failure"
 	"github.com/eerzho/ten_tarot/internal/model"
+	"github.com/eerzho/ten_tarot/pkg/logger"
 )
 
 type (
 	TGInvoice struct {
 		tgInvoiceRepo tgInvoiceRepo
-	}
-
-	tgInvoiceRepo interface {
-		Create(ctx context.Context, invoice *model.TGInvoice) error
-		Update(ctx context.Context, invoice *model.TGInvoice) error
-		GetByID(ctx context.Context, id string) (*model.TGInvoice, error)
 	}
 )
 
@@ -27,7 +22,38 @@ func NewTGInvoice(tgInvoiceRepo tgInvoiceRepo) *TGInvoice {
 	}
 }
 
-func (t *TGInvoice) CreateByData(ctx context.Context, chatID, data string) (*model.TGInvoice, error) {
+func (t *TGInvoice) IsValidByID(ctx context.Context, id string) bool {
+	const op = "service.TGInvoice.IsValidByID"
+	logger.Debug(op, logger.Any("id", id))
+
+	invoice, err := t.tgInvoiceRepo.GetByID(ctx, id)
+	if err != nil {
+		return false
+	}
+
+	return invoice.ChargeID == ""
+}
+
+func (t *TGInvoice) GetByID(ctx context.Context, id string) (*model.TGInvoice, error) {
+	const op = "service.TGInvoice.GetByID"
+	logger.Debug(op, logger.Any("id", id))
+
+	invoice, err := t.tgInvoiceRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return invoice, nil
+}
+
+func (t *TGInvoice) CreateByChatIDData(ctx context.Context, chatID, data string) (*model.TGInvoice, error) {
+	const op = "service.TGInvoice.CreateByChatIDData"
+	logger.Debug(
+		op,
+		logger.Any("chatID", chatID),
+		logger.Any("data", data),
+	)
+
 	parts := strings.Split(data, ":")
 	if len(parts) != 2 {
 		return nil, failure.ErrCallbackData
@@ -42,8 +68,8 @@ func (t *TGInvoice) CreateByData(ctx context.Context, chatID, data string) (*mod
 	}
 
 	invoice := model.TGInvoice{
-		Stars:         stars,
 		ChatID:        chatID,
+		StarsCount:    stars,
 		QuestionCount: count,
 	}
 
@@ -54,17 +80,15 @@ func (t *TGInvoice) CreateByData(ctx context.Context, chatID, data string) (*mod
 	return &invoice, nil
 }
 
-func (t *TGInvoice) IsValidByID(ctx context.Context, id string) bool {
-	invoice, err := t.getByID(ctx, id)
-	if err != nil {
-		return false
-	}
-
-	return invoice.ChargeID == ""
-}
-
 func (t *TGInvoice) UpdateByIDChargeID(ctx context.Context, id, chargeID string) (*model.TGInvoice, error) {
-	invoice, err := t.getByID(ctx, id)
+	const op = "service.TGInvoice.UpdateByIDChargeID"
+	logger.Debug(
+		op,
+		logger.Any("id", id),
+		logger.Any("chargeID", chargeID),
+	)
+
+	invoice, err := t.tgInvoiceRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -72,15 +96,6 @@ func (t *TGInvoice) UpdateByIDChargeID(ctx context.Context, id, chargeID string)
 	invoice.ChargeID = chargeID
 
 	if err = t.tgInvoiceRepo.Update(ctx, invoice); err != nil {
-		return nil, err
-	}
-
-	return invoice, nil
-}
-
-func (t *TGInvoice) getByID(ctx context.Context, id string) (*model.TGInvoice, error) {
-	invoice, err := t.tgInvoiceRepo.GetByID(ctx, id)
-	if err != nil {
 		return nil, err
 	}
 

@@ -15,11 +15,6 @@ type (
 		tgButtonService  tgButtonService
 		tgInvoiceService tgInvoiceService
 	}
-
-	tgButtonService interface {
-		Prices(ctx context.Context) [][]telebot.InlineButton
-		OverLimit(ctx context.Context) [][]telebot.InlineButton
-	}
 )
 
 func newButton(
@@ -27,7 +22,6 @@ func newButton(
 	tgButtonService tgButtonService,
 	tgInvoiceService tgInvoiceService,
 ) *button {
-
 	b := button{
 		tgButtonService:  tgButtonService,
 		tgInvoiceService: tgInvoiceService,
@@ -44,7 +38,7 @@ func newButton(
 }
 
 func (b *button) buyMoreQuestions(ctx telebot.Context) error {
-	const op = "./internal/handler/telegram/v1/button::buyMoreQuestions"
+	const op = "handler.telegram.v1.button.buyMoreQuestions"
 
 	if err := ctx.Delete(); err != nil {
 		logger.OPError(op, err)
@@ -64,7 +58,7 @@ func (b *button) buyMoreQuestions(ctx telebot.Context) error {
 }
 
 func (b *button) selectQuestionsAmount(ctx telebot.Context) error {
-	const op = "./internal/handler/telegram/v1/button::selectQuestionsAmount"
+	const op = "handler.telegram.v1.button.selectQuestionsAmount"
 
 	if err := ctx.Delete(); err != nil {
 		logger.OPError(op, err)
@@ -75,7 +69,7 @@ func (b *button) selectQuestionsAmount(ctx telebot.Context) error {
 		return err
 	}
 
-	invoice, err := b.tgInvoiceService.CreateByData(
+	invoice, err := b.tgInvoiceService.CreateByChatIDData(
 		context.Background(),
 		strconv.Itoa(int(ctx.Sender().ID)),
 		ctx.Callback().Data,
@@ -106,7 +100,7 @@ func (b *button) selectQuestionsAmount(ctx telebot.Context) error {
 					"%d - вопросов",
 					invoice.QuestionCount,
 				),
-				Amount: invoice.Stars,
+				Amount: invoice.StarsCount,
 			},
 		},
 	}

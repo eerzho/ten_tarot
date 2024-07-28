@@ -17,7 +17,7 @@ const docTemplate = `{
     "paths": {
         "/tg-messages": {
             "get": {
-                "description": "Show all messages list",
+                "description": "Show messages list",
                 "consumes": [
                     "application/json"
                 ],
@@ -156,7 +156,7 @@ const docTemplate = `{
         "model.TGMessage": {
             "type": "object",
             "properties": {
-                "answer": {
+                "bot_answer": {
                     "type": "string"
                 },
                 "chat_id": {
@@ -168,7 +168,7 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
-                "text": {
+                "user_question": {
                     "type": "string"
                 }
             }
@@ -184,6 +184,9 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "string"
+                },
+                "question_count": {
+                    "type": "integer"
                 },
                 "username": {
                     "type": "string"
