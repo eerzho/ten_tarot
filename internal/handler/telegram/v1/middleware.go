@@ -79,8 +79,8 @@ func (m *middleware) setUserAndContext(next telebot.HandlerFunc) telebot.Handler
 			return err
 		}
 
-		ctx.Set("user", user)
 		ctx.Set("oc", oc)
+		ctx.Set("user", user)
 
 		return next(ctx)
 	}
