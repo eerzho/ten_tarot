@@ -35,62 +35,51 @@ func newPayment(
 
 func (p *payment) checkout(ctx telebot.Context) error {
 	const op = "handler.telegram.v1.payment.checkout"
+	logger.Debug(op, logger.Any("RID", ctx.Get(RID)))
 
-	var err error
+	errTGMsg := "✨Пожалуйста, повторите попытку позже✨"
+
+	oc, ok := ctx.Get("oc").(context.Context)
+	if !ok {
+		logger.OPError(op, failure.ErrContextData)
+		return ctx.Send(errTGMsg)
+	}
+
 	preCQ := ctx.PreCheckoutQuery()
-	if !p.tgInvoiceService.IsValidByID(
-		context.Background(),
-		preCQ.Payload,
-	) {
-		err = ctx.Bot().Accept(preCQ, "Вы уже оплатили 🥳")
+	if !p.tgInvoiceService.IsValidByID(oc, preCQ.Payload) {
+		return ctx.Bot().Accept(preCQ, "Вы уже оплатили 🥳")
 	} else {
-		err = ctx.Bot().Accept(preCQ)
+		return ctx.Bot().Accept(preCQ)
 	}
-
-	if err != nil {
-		logger.OPError(op, err)
-		return err
-	}
-
-	return nil
 }
 
 func (p *payment) payment(ctx telebot.Context) error {
 	const op = "handler.telegram.v1.payment.payment"
+	logger.Debug(op, logger.Any("RID", ctx.Get(RID)))
+
+	errTGMsg := "✨Пожалуйста, повторите попытку позже✨"
 
 	user, ok := ctx.Get("user").(*model.TGUser)
 	if !ok {
 		logger.OPError(op, failure.ErrContextData)
-		if err := ctx.Send("✨Пожалуйста, повторите попытку позже✨"); err != nil {
-			logger.OPError(op, err)
-			return err
-		}
-		return failure.ErrContextData
+		return ctx.Send(errTGMsg)
+	}
+	oc, ok := ctx.Get("oc").(context.Context)
+	if !ok {
+		logger.OPError(op, failure.ErrContextData)
+		return ctx.Send(errTGMsg)
 	}
 
-	invoice, err := p.tgInvoiceService.UpdateByIDChargeID(
-		context.Background(),
+	err := p.tgInvoiceService.SuccessPayment(
+		oc,
 		ctx.Message().Payment.Payload,
 		ctx.Message().Payment.TelegramChargeID,
+		user,
 	)
 	if err != nil {
 		logger.OPError(op, err)
-		return err
+		return ctx.Send(errTGMsg)
 	}
 
-	if err = p.tgUserService.IncreaseQC(
-		context.Background(),
-		user,
-		invoice.QuestionCount,
-	); err != nil {
-		logger.OPError(op, err)
-		return err
-	}
-
-	if err = ctx.Send(fmt.Sprintf("У вас %d вопросов 🤯", user.QuestionCount)); err != nil {
-		logger.OPError(op, err)
-		return err
-	}
-
-	return nil
+	return ctx.Send(fmt.Sprintf("У вас %d вопросов 🤯", user.QuestionCount))
 }

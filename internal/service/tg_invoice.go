@@ -13,12 +13,17 @@ import (
 type (
 	TGInvoice struct {
 		tgInvoiceRepo tgInvoiceRepo
+		tgUserService tgUserService
 	}
 )
 
-func NewTGInvoice(tgInvoiceRepo tgInvoiceRepo) *TGInvoice {
+func NewTGInvoice(
+	tgInvoiceRepo tgInvoiceRepo,
+	tgUserService tgUserService,
+) *TGInvoice {
 	return &TGInvoice{
 		tgInvoiceRepo: tgInvoiceRepo,
+		tgUserService: tgUserService,
 	}
 }
 
@@ -80,24 +85,29 @@ func (t *TGInvoice) CreateByChatIDData(ctx context.Context, chatID, data string)
 	return &invoice, nil
 }
 
-func (t *TGInvoice) UpdateByIDChargeID(ctx context.Context, id, chargeID string) (*model.TGInvoice, error) {
+func (t *TGInvoice) SuccessPayment(ctx context.Context, id, chargeID string, user *model.TGUser) error {
 	const op = "service.TGInvoice.UpdateByIDChargeID"
 	logger.Debug(
 		op,
 		logger.Any("id", id),
+		logger.Any("user", user),
 		logger.Any("chargeID", chargeID),
 	)
 
 	invoice, err := t.tgInvoiceRepo.GetByID(ctx, id)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	invoice.ChargeID = chargeID
 
 	if err = t.tgInvoiceRepo.Update(ctx, invoice); err != nil {
-		return nil, err
+		return err
 	}
 
-	return invoice, nil
+	if err = t.tgUserService.IncreaseQC(ctx, user, invoice.QuestionCount); err != nil {
+		return err
+	}
+
+	return nil
 }

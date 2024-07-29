@@ -37,4 +37,8 @@ type (
 	tarotService interface {
 		Oracle(ctx context.Context, question string, hand []model.Card) (string, error)
 	}
+
+	tgUserService interface {
+		IncreaseQC(ctx context.Context, user *model.TGUser, count int) error
+	}
 )

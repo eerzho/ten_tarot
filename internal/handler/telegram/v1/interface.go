@@ -29,6 +29,6 @@ type (
 	tgInvoiceService interface {
 		IsValidByID(ctx context.Context, id string) bool
 		CreateByChatIDData(ctx context.Context, chatID, data string) (*model.TGInvoice, error)
-		UpdateByIDChargeID(ctx context.Context, id, chargeID string) (*model.TGInvoice, error)
+		SuccessPayment(ctx context.Context, id, chargeID string, user *model.TGUser) error
 	}
 )
