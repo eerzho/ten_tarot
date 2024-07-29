@@ -3,8 +3,9 @@ package v1
 import (
 	"context"
 	"fmt"
-	"strconv"
 
+	"github.com/eerzho/ten_tarot/internal/failure"
+	"github.com/eerzho/ten_tarot/internal/model"
 	"github.com/eerzho/ten_tarot/pkg/logger"
 	"gopkg.in/telebot.v3"
 )
@@ -57,6 +58,16 @@ func (p *payment) checkout(ctx telebot.Context) error {
 func (p *payment) payment(ctx telebot.Context) error {
 	const op = "handler.telegram.v1.payment.payment"
 
+	user, ok := ctx.Get("user").(*model.TGUser)
+	if !ok {
+		logger.OPError(op, failure.ErrContextData)
+		if err := ctx.Send("✨Пожалуйста, повторите попытку позже✨"); err != nil {
+			logger.OPError(op, err)
+			return err
+		}
+		return failure.ErrContextData
+	}
+
 	invoice, err := p.tgInvoiceService.UpdateByIDChargeID(
 		context.Background(),
 		ctx.Message().Payment.Payload,
@@ -67,11 +78,11 @@ func (p *payment) payment(ctx telebot.Context) error {
 		return err
 	}
 
-	user, err := p.tgUserService.UpdateByChatIDQC(
+	if err = p.tgUserService.IncreaseQC(
 		context.Background(),
-		strconv.Itoa(int(ctx.Sender().ID)), invoice.QuestionCount,
-	)
-	if err != nil {
+		user,
+		invoice.QuestionCount,
+	); err != nil {
 		logger.OPError(op, err)
 		return err
 	}

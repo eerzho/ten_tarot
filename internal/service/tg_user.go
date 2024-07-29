@@ -92,23 +92,34 @@ func (t *TGUser) GetOrCreateByChatIDUsername(ctx context.Context, chatID, userna
 	return &user, nil
 }
 
-func (t *TGUser) UpdateByChatIDQC(ctx context.Context, chatID string, questionCount int) (*model.TGUser, error) {
-	const op = "service.TGUser.UpdateByChatIDQC"
+func (t *TGUser) IncreaseQC(ctx context.Context, user *model.TGUser, count int) error {
+	const op = "service.TGUser.IncreaseQC"
 	logger.Debug(
 		op,
-		logger.Any("chatID", chatID),
-		logger.Any("questionCount", questionCount),
+		logger.Any("user", user),
+		logger.Any("count", count),
 	)
 
-	user, err := t.tgUserRepo.GetByChatID(ctx, chatID)
-	if err != nil {
-		return nil, err
+	user.QuestionCount += count
+	if err := t.tgUserRepo.Update(ctx, user); err != nil {
+		return err
 	}
 
-	user.QuestionCount = questionCount
-	if err = t.tgUserRepo.Update(ctx, user); err != nil {
-		return nil, err
+	return nil
+}
+
+func (t *TGUser) DecreaseQC(ctx context.Context, user *model.TGUser, count int) error {
+	const op = "service.TGUser.DecreaseQC"
+	logger.Debug(
+		op,
+		logger.Any("user", user),
+		logger.Any("count", count),
+	)
+
+	user.QuestionCount -= count
+	if err := t.tgUserRepo.Update(ctx, user); err != nil {
+		return err
 	}
 
-	return user, nil
+	return nil
 }

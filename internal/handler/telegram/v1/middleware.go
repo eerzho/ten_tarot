@@ -2,11 +2,12 @@ package v1
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"sync"
 	"time"
 
+	"github.com/eerzho/ten_tarot/internal/failure"
+	"github.com/eerzho/ten_tarot/internal/model"
 	"github.com/eerzho/ten_tarot/pkg/logger"
 	"github.com/google/uuid"
 	"gopkg.in/telebot.v3"
@@ -17,7 +18,7 @@ const RID = "X-Request-ID"
 type middleware struct {
 	mu                sync.Mutex
 	requestLimitCount int
-	activeRequest     map[int64]struct{}
+	activeRequest     map[int]struct{}
 	tgMessageService  tgMessageService
 	tgButtonService   tgButtonService
 	tgUserService     tgUserService
@@ -30,7 +31,7 @@ func newMiddleware(
 ) *middleware {
 	return &middleware{
 		requestLimitCount: 3,
-		activeRequest:     make(map[int64]struct{}),
+		activeRequest:     make(map[int]struct{}),
 		tgMessageService:  tgMessageService,
 		tgButtonService:   tgButtonService,
 		tgUserService:     tgUserService,
@@ -39,12 +40,12 @@ func newMiddleware(
 
 func (m *middleware) setRIDAndLogDuration(next telebot.HandlerFunc) telebot.HandlerFunc {
 	return func(ctx telebot.Context) error {
-		const op = "handler.http.v1.middleware.setRIDAndLogDuration"
+		const op = "handler.telegram.v1.middleware.setRIDAndLogDuration"
 
 		id := uuid.New().String()
 		ctx.Set(RID, id)
 
-		logger.Info(op, logger.Any("id", id))
+		logger.Info(op, logger.Any("RID", id))
 
 		start := time.Now()
 		err := next(ctx)
@@ -52,20 +53,46 @@ func (m *middleware) setRIDAndLogDuration(next telebot.HandlerFunc) telebot.Hand
 
 		logger.Info(
 			op,
-			logger.Any("id", id),
-			logger.Any("duration in seconds", duration.Seconds()),
+			logger.Any("RID", id),
+			logger.Any("SD", duration.Seconds()),
 		)
 
 		return err
 	}
 }
 
+func (m *middleware) setUserAndContext(next telebot.HandlerFunc) telebot.HandlerFunc {
+	return func(ctx telebot.Context) error {
+		const op = "handler.telegram.v1.middleware.setUser"
+		logger.Debug(op, logger.Any("id", ctx.Get(RID)))
+
+		oc := context.Background()
+		username := ctx.Sender().Username
+		chatID := strconv.Itoa(int(ctx.Sender().ID))
+
+		user, err := m.tgUserService.GetOrCreateByChatIDUsername(oc, chatID, username)
+		if err != nil {
+			logger.OPError(op, err)
+			if err = ctx.Send("Что-то пошло не так, напишите @eerzho"); err != nil {
+				logger.OPError(op, err)
+			}
+			return err
+		}
+
+		ctx.Set("user", user)
+		ctx.Set("oc", oc)
+
+		return next(ctx)
+	}
+}
+
 func (m *middleware) spamLimit(next telebot.HandlerFunc) telebot.HandlerFunc {
 	return func(ctx telebot.Context) error {
-		const op = "handler.http.v1.middleware.requestLimit"
+		const op = "handler.telegram.v1.middleware.spamLimit"
+		logger.Debug(op, logger.Any("id", ctx.Get(RID)))
 
-		userId := ctx.Message().Chat.ID
-		isActive := m.isActiveRequest(userId)
+		chatID := int(ctx.Sender().ID)
+		isActive := m.isActiveRequest(chatID)
 
 		if isActive {
 			if err := ctx.Send(
@@ -75,81 +102,100 @@ func (m *middleware) spamLimit(next telebot.HandlerFunc) telebot.HandlerFunc {
 				logger.OPError(op, err)
 				return err
 			}
-
 			return nil
 		} else {
-			m.setActiveRequest(userId)
+			m.setActiveRequest(chatID)
 			defer func() {
-				m.delActiveRequest(userId)
+				m.delActiveRequest(chatID)
 			}()
 			return next(ctx)
 		}
 	}
 }
 
-func (m *middleware) setActiveRequest(userId int64) {
+func (m *middleware) setActiveRequest(chatID int) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.activeRequest[userId] = struct{}{}
+	m.activeRequest[chatID] = struct{}{}
 }
 
-func (m *middleware) delActiveRequest(userId int64) {
+func (m *middleware) delActiveRequest(chatID int) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	delete(m.activeRequest, userId)
+	delete(m.activeRequest, chatID)
 }
 
-func (m *middleware) isActiveRequest(userId int64) bool {
+func (m *middleware) isActiveRequest(chatID int) bool {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	_, ok := m.activeRequest[userId]
+	_, ok := m.activeRequest[chatID]
 
 	return ok
 }
 
 func (m *middleware) requestLimit(next telebot.HandlerFunc) telebot.HandlerFunc {
 	return func(ctx telebot.Context) error {
-		const op = "handler.http.v1.middleware.requestLimit"
+		const op = "handler.telegram.v1.middleware.requestLimit"
+		logger.Debug(op, logger.Any("id", ctx.Get(RID)))
 
-		c := context.Background()
+		errTGMsg := "✨Пожалуйста, повторите попытку позже✨"
+		errContextData := failure.ErrContextData
+
+		oc, ok := ctx.Get("oc").(context.Context)
+		if !ok {
+			logger.OPError(op, errContextData)
+			if err := ctx.Send(errTGMsg); err != nil {
+				logger.OPError(op, err)
+			}
+			return errContextData
+		}
+
+		user, ok := ctx.Get("user").(*model.TGUser)
+		if !ok {
+			logger.OPError(op, errContextData)
+			if err := ctx.Send(errTGMsg); err != nil {
+				logger.OPError(op, err)
+			}
+			return errContextData
+		}
+
 		monthAgo := time.Now().AddDate(0, -1, 0)
-
-		chatID := strconv.Itoa(int(ctx.Sender().ID))
-		count, err := m.tgMessageService.CountByChatIDFromTime(c, chatID, monthAgo)
+		msgCount, err := m.tgMessageService.CountByChatIDFromTime(oc, user.ChatID, monthAgo)
 		if err != nil {
 			logger.OPError(op, err)
+			if err = ctx.Send(errTGMsg); err != nil {
+				logger.OPError(op, err)
+			}
+			return err
+		}
+
+		if msgCount < m.requestLimitCount {
 			return next(ctx)
 		}
 
-		if count >= m.requestLimitCount {
-			user, err := m.tgUserService.GetOrCreateByChatIDUsername(c, chatID, ctx.Sender().Username)
+		if user.QuestionCount > 0 {
+			err = next(ctx)
+			if err != nil {
+				return err
+			}
+			err = m.tgUserService.DecreaseQC(oc, user, 1)
 			if err != nil {
 				logger.OPError(op, err)
+				if err = ctx.Send(errTGMsg); err != nil {
+					logger.OPError(op, err)
+				}
 				return err
 			}
-
-			if user.QuestionCount == 0 {
-				opt := telebot.ReplyMarkup{
-					InlineKeyboard: m.tgButtonService.OverLimit(c),
-				}
-
-				if _, err := ctx.Bot().Send(ctx.Sender(), "✨Вы превысили лимит✨", &opt); err != nil {
-					logger.Error(fmt.Sprintf("%s - %s", op, err.Error()))
-					return err
-				}
-
-				return nil
+			return nil
+		} else {
+			opt := telebot.ReplyMarkup{
+				InlineKeyboard: m.tgButtonService.OverLimit(oc),
 			}
-
-			user.QuestionCount--
-			if _, err := m.tgUserService.UpdateByChatIDQC(c, user.ChatID, user.QuestionCount); err != nil {
+			if err = ctx.Send("✨Вы превысили лимит✨", &opt); err != nil {
 				logger.OPError(op, err)
 				return err
 			}
-
-			return next(ctx)
+			return nil
 		}
-
-		return next(ctx)
 	}
 }

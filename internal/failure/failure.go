@@ -9,4 +9,5 @@ var (
 	ErrAnswerIsRequired = errors.New("answer is required")
 	ErrChoicesIsEmpty   = errors.New("choices is empty")
 	ErrCallbackData     = errors.New("callback data is invalid")
+	ErrContextData      = errors.New("context data is invalid")
 )

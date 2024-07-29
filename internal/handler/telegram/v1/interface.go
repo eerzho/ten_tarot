@@ -15,8 +15,9 @@ type (
 	}
 
 	tgUserService interface {
+		IncreaseQC(ctx context.Context, user *model.TGUser, count int) error
+		DecreaseQC(ctx context.Context, user *model.TGUser, count int) error
 		GetByChatID(ctx context.Context, chatID string) (*model.TGUser, error)
-		UpdateByChatIDQC(ctx context.Context, chatID string, questionCount int) (*model.TGUser, error)
 		GetOrCreateByChatIDUsername(ctx context.Context, chatID, username string) (*model.TGUser, error)
 	}
 

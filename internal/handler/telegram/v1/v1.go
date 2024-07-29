@@ -13,7 +13,7 @@ func NewHandler(
 ) {
 	mv := newMiddleware(tgMessageService, tgButtonService, tgUserService)
 
-	bot.Use(mv.setRIDAndLogDuration)
+	bot.Use(mv.setRIDAndLogDuration, mv.setUserAndContext)
 
 	newCommand(bot, tgUserService)
 	newMessage(mv, bot, tgMessageService, tgUserService)
