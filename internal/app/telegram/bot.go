@@ -44,8 +44,8 @@ func New(cfg *config.Config, mg *mongo.Mongo) (*Bot, error) {
 	// service
 	tgUserService := service.NewTGUser(tgUserRepo)
 	deckService := service.NewDeck()
-	tarotService := service.NewTarotMock()
-	//tarotService := service.NewTarot(cfg.Model, cfg.GPT.Token, cfg.GPT.Prompt)
+	//tarotService := service.NewTarotMock()
+	tarotService := service.NewTarot(cfg.Model, cfg.GPT.Token, cfg.GPT.Prompt)
 	tgMessageService := service.NewTGMessage(tgMessageRepo, deckService, tarotService)
 	tgKeyboardService := service.NewTGKeyboard()
 	tgInvoiceService := service.NewTGInvoice(tgInvoiceRepo, tgUserService)
