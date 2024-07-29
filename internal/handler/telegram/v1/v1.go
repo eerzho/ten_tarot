@@ -8,15 +8,15 @@ func NewHandler(
 	bot *telebot.Bot,
 	tgUserService tgUserService,
 	tgMessageService tgMessageService,
-	tgButtonService tgButtonService,
+	tgKeyboardService tgKeyboardService,
 	tgInvoiceService tgInvoiceService,
 ) {
-	mv := newMiddleware(tgMessageService, tgButtonService, tgUserService)
+	mv := newMiddleware(tgMessageService, tgKeyboardService, tgUserService)
 
 	bot.Use(mv.setRIDAndLogDuration, mv.setUserAndContext)
 
 	newCommand(bot, tgUserService)
 	newMessage(mv, bot, tgMessageService, tgUserService)
-	newButton(bot, tgButtonService, tgInvoiceService)
+	newButton(bot, tgKeyboardService, tgInvoiceService)
 	newPayment(bot, tgInvoiceService, tgUserService)
 }

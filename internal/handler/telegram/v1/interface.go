@@ -9,15 +9,13 @@ import (
 )
 
 type (
-	tgButtonService interface {
+	tgKeyboardService interface {
 		Prices(ctx context.Context) [][]telebot.InlineButton
 		OverLimit(ctx context.Context) [][]telebot.InlineButton
 	}
 
 	tgUserService interface {
-		IncreaseQC(ctx context.Context, user *model.TGUser, count int) error
 		DecreaseQC(ctx context.Context, user *model.TGUser, count int) error
-		GetByChatID(ctx context.Context, chatID string) (*model.TGUser, error)
 		GetOrCreateByChatIDUsername(ctx context.Context, chatID, username string) (*model.TGUser, error)
 	}
 

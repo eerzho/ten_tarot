@@ -39,18 +39,6 @@ func (t *TGInvoice) IsValidByID(ctx context.Context, id string) bool {
 	return invoice.ChargeID == ""
 }
 
-func (t *TGInvoice) GetByID(ctx context.Context, id string) (*model.TGInvoice, error) {
-	const op = "service.TGInvoice.GetByID"
-	logger.Debug(op, logger.Any("id", id))
-
-	invoice, err := t.tgInvoiceRepo.GetByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	return invoice, nil
-}
-
 func (t *TGInvoice) CreateByChatIDData(ctx context.Context, chatID, data string) (*model.TGInvoice, error) {
 	const op = "service.TGInvoice.CreateByChatIDData"
 	logger.Debug(

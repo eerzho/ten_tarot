@@ -52,18 +52,6 @@ func (t *TGUser) GetList(ctx context.Context, username, chatID string, page, cou
 	return users, total, nil
 }
 
-func (t *TGUser) GetByChatID(ctx context.Context, chatID string) (*model.TGUser, error) {
-	const op = "service.TGUser.GetByChatID"
-	logger.Debug(op, logger.Any("chatID", chatID))
-
-	user, err := t.tgUserRepo.GetByChatID(ctx, chatID)
-	if err != nil {
-		return nil, err
-	}
-
-	return user, nil
-}
-
 func (t *TGUser) GetOrCreateByChatIDUsername(ctx context.Context, chatID, username string) (*model.TGUser, error) {
 	const op = "service.TGUser.GetOrCreateByChatIDUsername"
 	logger.Debug(op,

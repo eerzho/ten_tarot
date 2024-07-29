@@ -13,19 +13,19 @@ import (
 
 type (
 	button struct {
-		tgButtonService  tgButtonService
-		tgInvoiceService tgInvoiceService
+		tgKeyboardService tgKeyboardService
+		tgInvoiceService  tgInvoiceService
 	}
 )
 
 func newButton(
 	bot *telebot.Bot,
-	tgButtonService tgButtonService,
+	tgKeyboardService tgKeyboardService,
 	tgInvoiceService tgInvoiceService,
 ) *button {
 	b := button{
-		tgButtonService:  tgButtonService,
-		tgInvoiceService: tgInvoiceService,
+		tgKeyboardService: tgKeyboardService,
+		tgInvoiceService:  tgInvoiceService,
 	}
 
 	bot.Handle(&telebot.Btn{
@@ -56,7 +56,7 @@ func (b *button) buyMoreQuestions(ctx telebot.Context) error {
 	}
 
 	opt := telebot.ReplyMarkup{
-		InlineKeyboard: b.tgButtonService.Prices(oc),
+		InlineKeyboard: b.tgKeyboardService.Prices(oc),
 	}
 
 	return ctx.Send("Выберите количество вопросов 🤪", &opt)

@@ -20,20 +20,20 @@ type middleware struct {
 	requestLimitCount int
 	activeRequest     map[int]struct{}
 	tgMessageService  tgMessageService
-	tgButtonService   tgButtonService
+	tgKeyboardService tgKeyboardService
 	tgUserService     tgUserService
 }
 
 func newMiddleware(
 	tgMessageService tgMessageService,
-	tgButtonService tgButtonService,
+	tgKeyboardService tgKeyboardService,
 	tgUserService tgUserService,
 ) *middleware {
 	return &middleware{
 		requestLimitCount: 3,
 		activeRequest:     make(map[int]struct{}),
 		tgMessageService:  tgMessageService,
-		tgButtonService:   tgButtonService,
+		tgKeyboardService: tgKeyboardService,
 		tgUserService:     tgUserService,
 	}
 }
@@ -168,7 +168,7 @@ func (m *middleware) requestLimit(next telebot.HandlerFunc) telebot.HandlerFunc 
 			return nil
 		} else {
 			opt := telebot.ReplyMarkup{
-				InlineKeyboard: m.tgButtonService.OverLimit(oc),
+				InlineKeyboard: m.tgKeyboardService.OverLimit(oc),
 			}
 			return ctx.Send("✨Вы превысили лимит✨", &opt)
 		}

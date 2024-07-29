@@ -9,16 +9,16 @@ import (
 )
 
 type (
-	TGButton struct {
+	TGKeyboard struct {
 	}
 )
 
-func NewTGButton() *TGButton {
-	return &TGButton{}
+func NewTGKeyboard() *TGKeyboard {
+	return &TGKeyboard{}
 }
 
-func (t *TGButton) OverLimit(ctx context.Context) [][]telebot.InlineButton {
-	const op = "service.TGButton.OverLimit"
+func (t *TGKeyboard) OverLimit(ctx context.Context) [][]telebot.InlineButton {
+	const op = "service.TGKeyboard.OverLimit"
 	logger.Debug(op)
 
 	buttons := [][]telebot.InlineButton{
@@ -33,8 +33,8 @@ func (t *TGButton) OverLimit(ctx context.Context) [][]telebot.InlineButton {
 	return buttons
 }
 
-func (t *TGButton) Prices(ctx context.Context) [][]telebot.InlineButton {
-	const op = "service.TGButton.Prices"
+func (t *TGKeyboard) Prices(ctx context.Context) [][]telebot.InlineButton {
+	const op = "service.TGKeyboard.Prices"
 	logger.Debug(op)
 
 	buttons := [][]telebot.InlineButton{
