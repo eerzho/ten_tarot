@@ -73,10 +73,7 @@ func (m *middleware) setUserAndContext(next telebot.HandlerFunc) telebot.Handler
 		user, err := m.tgUserService.GetOrCreateByChatIDUsername(oc, chatID, username)
 		if err != nil {
 			logger.OPError(op, err)
-			if err = ctx.Send("Что-то пошло не так, напишите @eerzho"); err != nil {
-				logger.OPError(op, err)
-			}
-			return err
+			return ctx.Send("Что-то пошло не так, напишите @eerzho")
 		}
 
 		ctx.Set("oc", oc)
@@ -95,14 +92,10 @@ func (m *middleware) spamLimit(next telebot.HandlerFunc) telebot.HandlerFunc {
 		isActive := m.isActiveRequest(chatID)
 
 		if isActive {
-			if err := ctx.Send(
+			return ctx.Send(
 				"✨Пожалуйста, подождите✨",
 				&telebot.SendOptions{ReplyTo: ctx.Message()},
-			); err != nil {
-				logger.OPError(op, err)
-				return err
-			}
-			return nil
+			)
 		} else {
 			m.setActiveRequest(chatID)
 			defer func() {
@@ -136,37 +129,26 @@ func (m *middleware) isActiveRequest(chatID int) bool {
 func (m *middleware) requestLimit(next telebot.HandlerFunc) telebot.HandlerFunc {
 	return func(ctx telebot.Context) error {
 		const op = "handler.telegram.v1.middleware.requestLimit"
-		logger.Debug(op, logger.Any("id", ctx.Get(RID)))
+		logger.Debug(op, logger.Any("RID", ctx.Get(RID)))
 
 		errTGMsg := "✨Пожалуйста, повторите попытку позже✨"
-		errContextData := failure.ErrContextData
 
 		oc, ok := ctx.Get("oc").(context.Context)
 		if !ok {
-			logger.OPError(op, errContextData)
-			if err := ctx.Send(errTGMsg); err != nil {
-				logger.OPError(op, err)
-			}
-			return errContextData
+			logger.OPError(op, failure.ErrContextData)
+			return ctx.Send(errTGMsg)
 		}
-
 		user, ok := ctx.Get("user").(*model.TGUser)
 		if !ok {
-			logger.OPError(op, errContextData)
-			if err := ctx.Send(errTGMsg); err != nil {
-				logger.OPError(op, err)
-			}
-			return errContextData
+			logger.OPError(op, failure.ErrContextData)
+			return ctx.Send(errTGMsg)
 		}
 
 		monthAgo := time.Now().AddDate(0, -1, 0)
 		msgCount, err := m.tgMessageService.CountByChatIDFromTime(oc, user.ChatID, monthAgo)
 		if err != nil {
 			logger.OPError(op, err)
-			if err = ctx.Send(errTGMsg); err != nil {
-				logger.OPError(op, err)
-			}
-			return err
+			return ctx.Send(errTGMsg)
 		}
 
 		if msgCount < m.requestLimitCount {
@@ -181,21 +163,14 @@ func (m *middleware) requestLimit(next telebot.HandlerFunc) telebot.HandlerFunc 
 			err = m.tgUserService.DecreaseQC(oc, user, 1)
 			if err != nil {
 				logger.OPError(op, err)
-				if err = ctx.Send(errTGMsg); err != nil {
-					logger.OPError(op, err)
-				}
-				return err
+				return ctx.Send(errTGMsg)
 			}
 			return nil
 		} else {
 			opt := telebot.ReplyMarkup{
 				InlineKeyboard: m.tgButtonService.OverLimit(oc),
 			}
-			if err = ctx.Send("✨Вы превысили лимит✨", &opt); err != nil {
-				logger.OPError(op, err)
-				return err
-			}
-			return nil
+			return ctx.Send("✨Вы превысили лимит✨", &opt)
 		}
 	}
 }

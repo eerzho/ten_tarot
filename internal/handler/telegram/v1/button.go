@@ -47,27 +47,19 @@ func (b *button) buyMoreQuestions(ctx telebot.Context) error {
 	oc, ok := ctx.Get("oc").(context.Context)
 	if !ok {
 		logger.OPError(op, failure.ErrContextData)
-		if err := ctx.Send(errTGMsg); err != nil {
-			logger.OPError(op, err)
-			return err
-		}
-		return failure.ErrContextData
+		return ctx.Send(errTGMsg)
 	}
 
 	if err := ctx.Delete(); err != nil {
 		logger.OPError(op, err)
-		return err
+		return ctx.Send(errTGMsg)
 	}
 
 	opt := telebot.ReplyMarkup{
 		InlineKeyboard: b.tgButtonService.Prices(oc),
 	}
-	if err := ctx.Send("Выберите количество вопросов 🤪", &opt); err != nil {
-		logger.OPError(op, err)
-		return err
-	}
 
-	return nil
+	return ctx.Send("Выберите количество вопросов 🤪", &opt)
 }
 
 func (b *button) selectQuestionsAmount(ctx telebot.Context) error {
@@ -79,19 +71,12 @@ func (b *button) selectQuestionsAmount(ctx telebot.Context) error {
 	oc, ok := ctx.Get("oc").(context.Context)
 	if !ok {
 		logger.OPError(op, failure.ErrContextData)
-		if err := ctx.Send(errTGMsg); err != nil {
-			logger.OPError(op, err)
-			return err
-		}
-		return failure.ErrContextData
+		return ctx.Send(errTGMsg)
 	}
 
 	if err := ctx.Delete(); err != nil {
 		logger.OPError(op, err)
-		if err = ctx.Send(errTGMsg); err != nil {
-			logger.OPError(op, err)
-		}
-		return err
+		return ctx.Send(errTGMsg)
 	}
 
 	tgInvoice, err := b.tgInvoiceService.CreateByChatIDData(
@@ -101,10 +86,7 @@ func (b *button) selectQuestionsAmount(ctx telebot.Context) error {
 	)
 	if err != nil {
 		logger.OPError(op, err)
-		if err = ctx.Send(errTGMsg); err != nil {
-			logger.OPError(op, err)
-		}
-		return err
+		return ctx.Send(errTGMsg)
 	}
 
 	invoice := telebot.Invoice{
@@ -129,10 +111,5 @@ func (b *button) selectQuestionsAmount(ctx telebot.Context) error {
 		},
 	}
 
-	if err = ctx.Send(&invoice); err != nil {
-		logger.OPError(op, err)
-		return err
-	}
-
-	return nil
+	return ctx.Send(&invoice)
 }

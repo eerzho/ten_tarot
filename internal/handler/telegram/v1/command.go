@@ -25,14 +25,9 @@ func (c *command) start(ctx telebot.Context) error {
 	const op = "handler.telegram.v1.command.start"
 	logger.Debug(op, logger.Any("RID", ctx.Get(RID)))
 
-	if err := ctx.Send(
+	return ctx.Send(
 		"Я ваш личный Таролог и готов помочь вам получить ответы на любые вопросы. " +
 			"Просто отправьте свой вопрос, и я сделаю расклад на Таро специально для вас.\n\n" +
 			"✨Будьте готовы узнать, что приготовила для вас судьба✨",
-	); err != nil {
-		logger.OPError(op, err)
-		return err
-	}
-
-	return nil
+	)
 }
