@@ -32,8 +32,8 @@ func newButton(
 		Unique: constant.BuyMoreQuestions,
 	}, b.buyMoreQuestions)
 	bot.Handle(&telebot.Btn{
-		Unique: constant.SelectQuestionsAmount,
-	}, b.selectQuestionsAmount)
+		Unique: constant.SelectQuestionsCount,
+	}, b.selectQuestionsCount)
 
 	return &b
 }
@@ -62,8 +62,8 @@ func (b *button) buyMoreQuestions(ctx telebot.Context) error {
 	return ctx.Send("Выберите количество вопросов 🤪", &opt)
 }
 
-func (b *button) selectQuestionsAmount(ctx telebot.Context) error {
-	const op = "handler.telegram.v1.button.selectQuestionsAmount"
+func (b *button) selectQuestionsCount(ctx telebot.Context) error {
+	const op = "handler.telegram.v1.button.selectQuestionsCount"
 	logger.Debug(op, logger.Any("RID", ctx.Get(RID)))
 
 	errTGMsg := "✨Пожалуйста, повторите попытку позже✨"

@@ -40,17 +40,17 @@ func (t *TGKeyboard) Prices(ctx context.Context) [][]telebot.InlineButton {
 	buttons := [][]telebot.InlineButton{
 		{
 			telebot.InlineButton{
-				Unique: constant.SelectQuestionsAmount,
+				Unique: constant.SelectQuestionsCount,
 				Text:   "5 вопросов - 50 ⭐️",
 				Data:   "5:50",
 			},
 			telebot.InlineButton{
-				Unique: constant.SelectQuestionsAmount,
+				Unique: constant.SelectQuestionsCount,
 				Text:   "10 вопросов - 85 ⭐️",
 				Data:   "10:85",
 			},
 			//telebot.InlineButton{
-			//	Unique: constant.SelectQuestionsAmount,
+			//	Unique: constant.SelectQuestionsCount,
 			//	Text:   "Test",
 			//	Data:   "1:1",
 			//},

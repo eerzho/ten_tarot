@@ -1,4 +1,4 @@
 package constant
 
 const BuyMoreQuestions = "BuyMoreQuestions"
-const SelectQuestionsAmount = "SelectQuestionsAmount"
+const SelectQuestionsCount = "SelectQuestionsCount"
