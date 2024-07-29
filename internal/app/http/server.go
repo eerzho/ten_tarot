@@ -27,9 +27,9 @@ func New(cfg *config.Config, mg *mongo.Mongo) *Server {
 
 	// service
 	tgUserService := service.NewTGUser(tgUserRepo)
-	cardService := service.NewCard()
+	deckService := service.NewDeck()
 	tarotService := service.NewTarot(cfg.Model, cfg.GPT.Token, cfg.GPT.Prompt)
-	tgMessageService := service.NewTGMessage(tgMessageRepo, cardService, tarotService)
+	tgMessageService := service.NewTGMessage(tgMessageRepo, deckService, tarotService)
 
 	// handler
 	v1.NewHandler(router, tgUserService, tgMessageService)

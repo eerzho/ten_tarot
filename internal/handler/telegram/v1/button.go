@@ -6,115 +6,110 @@ import (
 	"strconv"
 
 	"github.com/eerzho/ten_tarot/internal/constant"
+	"github.com/eerzho/ten_tarot/internal/failure"
 	"github.com/eerzho/ten_tarot/pkg/logger"
 	"gopkg.in/telebot.v3"
 )
 
 type (
 	button struct {
-		tgButtonService  tgButtonService
-		tgInvoiceService tgInvoiceService
-	}
-
-	tgButtonService interface {
-		Prices(ctx context.Context) [][]telebot.InlineButton
-		OverLimit(ctx context.Context) [][]telebot.InlineButton
+		tgKeyboardService tgKeyboardService
+		tgInvoiceService  tgInvoiceService
 	}
 )
 
 func newButton(
 	bot *telebot.Bot,
-	tgButtonService tgButtonService,
+	tgKeyboardService tgKeyboardService,
 	tgInvoiceService tgInvoiceService,
 ) *button {
-
 	b := button{
-		tgButtonService:  tgButtonService,
-		tgInvoiceService: tgInvoiceService,
+		tgKeyboardService: tgKeyboardService,
+		tgInvoiceService:  tgInvoiceService,
 	}
 
 	bot.Handle(&telebot.Btn{
 		Unique: constant.BuyMoreQuestions,
 	}, b.buyMoreQuestions)
 	bot.Handle(&telebot.Btn{
-		Unique: constant.SelectQuestionsAmount,
-	}, b.selectQuestionsAmount)
+		Unique: constant.SelectQuestionsCount,
+	}, b.selectQuestionsCount)
 
 	return &b
 }
 
 func (b *button) buyMoreQuestions(ctx telebot.Context) error {
-	const op = "./internal/handler/telegram/v1/button::buyMoreQuestions"
+	const op = "handler.telegram.v1.button.buyMoreQuestions"
+	logger.Debug(op, logger.Any("RID", ctx.Get(RID)))
+
+	errTGMsg := "✨Пожалуйста, повторите попытку позже✨"
+
+	oc, ok := ctx.Get("oc").(context.Context)
+	if !ok {
+		logger.OPError(op, failure.ErrContextData)
+		return ctx.Send(errTGMsg)
+	}
 
 	if err := ctx.Delete(); err != nil {
 		logger.OPError(op, err)
-		return err
+		return ctx.Send(errTGMsg)
 	}
 
 	opt := telebot.ReplyMarkup{
-		InlineKeyboard: b.tgButtonService.Prices(context.Background()),
+		InlineKeyboard: b.tgKeyboardService.Prices(oc),
 	}
 
-	if err := ctx.Send("Выберите количество вопросов 🤪", &opt); err != nil {
-		logger.OPError(op, err)
-		return err
-	}
-
-	return nil
+	return ctx.Send("Выберите количество вопросов 🤪", &opt)
 }
 
-func (b *button) selectQuestionsAmount(ctx telebot.Context) error {
-	const op = "./internal/handler/telegram/v1/button::selectQuestionsAmount"
+func (b *button) selectQuestionsCount(ctx telebot.Context) error {
+	const op = "handler.telegram.v1.button.selectQuestionsCount"
+	logger.Debug(op, logger.Any("RID", ctx.Get(RID)))
+
+	errTGMsg := "✨Пожалуйста, повторите попытку позже✨"
+
+	oc, ok := ctx.Get("oc").(context.Context)
+	if !ok {
+		logger.OPError(op, failure.ErrContextData)
+		return ctx.Send(errTGMsg)
+	}
 
 	if err := ctx.Delete(); err != nil {
 		logger.OPError(op, err)
-		if err = ctx.Send("✨Пожалуйста, повторите попытку позже✨"); err != nil {
-			logger.OPError(op, err)
-			return err
-		}
-		return err
+		return ctx.Send(errTGMsg)
 	}
 
-	invoice, err := b.tgInvoiceService.CreateByData(
-		context.Background(),
+	tgInvoice, err := b.tgInvoiceService.CreateByChatIDData(
+		oc,
 		strconv.Itoa(int(ctx.Sender().ID)),
 		ctx.Callback().Data,
 	)
 	if err != nil {
 		logger.OPError(op, err)
-		if err = ctx.Send("✨Пожалуйста, повторите попытку позже✨"); err != nil {
-			logger.OPError(op, err)
-			return err
-		}
-		return err
+		return ctx.Send(errTGMsg)
 	}
 
-	in := telebot.Invoice{
+	invoice := telebot.Invoice{
 		Title: fmt.Sprintf(
 			"%d - вопросов",
-			invoice.QuestionCount,
+			tgInvoice.QuestionCount,
 		),
 		Description: fmt.Sprintf(
 			"Вы сможете задать еще %d вопросов",
-			invoice.QuestionCount,
+			tgInvoice.QuestionCount,
 		),
-		Payload:  invoice.ID,
+		Payload:  tgInvoice.ID,
 		Currency: "XTR",
 		Prices: []telebot.Price{
 			{
 				Label: fmt.Sprintf(
 					"%d - вопросов",
-					invoice.QuestionCount,
+					tgInvoice.QuestionCount,
 				),
-				Amount: invoice.Stars,
+				Amount: tgInvoice.StarsCount,
 			},
 		},
 	}
 
-	if err = ctx.Send(&in); err != nil {
-		logger.OPError(op, err)
-		return err
-	}
-
-	return nil
+	return ctx.Send(&invoice)
 }

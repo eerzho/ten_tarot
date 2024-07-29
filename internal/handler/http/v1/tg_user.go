@@ -1,12 +1,9 @@
 package v1
 
 import (
-	"context"
-	"fmt"
 	"strconv"
 
 	"github.com/eerzho/ten_tarot/internal/handler/http/v1/response"
-	"github.com/eerzho/ten_tarot/internal/model"
 	"github.com/eerzho/ten_tarot/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
@@ -15,10 +12,6 @@ type (
 	tgUser struct {
 		tgUserService tgUserService
 	}
-
-	tgUserService interface {
-		List(ctx context.Context, username, chatID string, page, count int) ([]model.TGUser, int, error)
-	}
 )
 
 func newTGUser(router *gin.RouterGroup, tgUserService tgUserService) *tgUser {
@@ -26,12 +19,11 @@ func newTGUser(router *gin.RouterGroup, tgUserService tgUserService) *tgUser {
 		tgUserService: tgUserService,
 	}
 
-	router.GET("/tg-users", t.list)
+	router.GET("/tg-users", t.getList)
 
 	return t
 }
 
-// list -.
 // @Summary Show users
 // @Description Show users list
 // @Tags tg-users
@@ -43,9 +35,10 @@ func newTGUser(router *gin.RouterGroup, tgUserService tgUserService) *tgUser {
 // @Param count query int false "Count"
 // @Success 200 {object} response.pagination{data=[]model.TGUser}
 // @Router /tg-users [get]
-func (t *tgUser) list(ctx *gin.Context) {
-	const op = "./internal/handler/http/v1/tg_user::list"
+func (t *tgUser) getList(ctx *gin.Context) {
+	const op = "handler.http.v1.tgUser.getList"
 
+	// todo перемести эту логику в service
 	page, _ := strconv.Atoi(ctx.Query("page"))
 	if page == 0 {
 		page = 1
@@ -56,9 +49,15 @@ func (t *tgUser) list(ctx *gin.Context) {
 		count = 10
 	}
 
-	users, total, err := t.tgUserService.List(ctx, ctx.Query("username"), ctx.Query("chat_id"), page, count)
+	users, total, err := t.tgUserService.GetList(
+		ctx,
+		ctx.Query("username"),
+		ctx.Query("chat_id"),
+		page,
+		count,
+	)
 	if err != nil {
-		logger.Error(fmt.Sprintf("%s - %s", op, err.Error()))
+		logger.OPError(op, err)
 		response.Fail(ctx, err)
 		return
 	}

@@ -3,8 +3,8 @@ package v1
 import (
 	"context"
 	"fmt"
-	"strconv"
 
+	"github.com/eerzho/ten_tarot/internal/failure"
 	"github.com/eerzho/ten_tarot/internal/model"
 	"github.com/eerzho/ten_tarot/pkg/logger"
 	"gopkg.in/telebot.v3"
@@ -14,12 +14,6 @@ type (
 	payment struct {
 		tgInvoiceService tgInvoiceService
 		tgUserService    tgUserService
-	}
-
-	tgInvoiceService interface {
-		IsValidByID(ctx context.Context, id string) bool
-		CreateByData(ctx context.Context, chatID, data string) (*model.TGInvoice, error)
-		UpdateByIDChargeID(ctx context.Context, id, chargeID string) (*model.TGInvoice, error)
 	}
 )
 
@@ -40,53 +34,52 @@ func newPayment(
 }
 
 func (p *payment) checkout(ctx telebot.Context) error {
-	const op = "./internal/handler/telegram/v1/payment::checkout"
+	const op = "handler.telegram.v1.payment.checkout"
+	logger.Debug(op, logger.Any("RID", ctx.Get(RID)))
 
-	var err error
+	errTGMsg := "✨Пожалуйста, повторите попытку позже✨"
+
+	oc, ok := ctx.Get("oc").(context.Context)
+	if !ok {
+		logger.OPError(op, failure.ErrContextData)
+		return ctx.Send(errTGMsg)
+	}
+
 	preCQ := ctx.PreCheckoutQuery()
-	if !p.tgInvoiceService.IsValidByID(
-		context.Background(),
-		preCQ.Payload,
-	) {
-		err = ctx.Bot().Accept(preCQ, "Вы уже оплатили 🥳")
+	if !p.tgInvoiceService.IsValidByID(oc, preCQ.Payload) {
+		return ctx.Bot().Accept(preCQ, "Вы уже оплатили 🥳")
 	} else {
-		err = ctx.Bot().Accept(preCQ)
+		return ctx.Bot().Accept(preCQ)
 	}
-
-	if err != nil {
-		logger.OPError(op, err)
-		return err
-	}
-
-	return nil
 }
 
 func (p *payment) payment(ctx telebot.Context) error {
-	const op = "./internal/handler/telegram/v1/payment::payment"
+	const op = "handler.telegram.v1.payment.payment"
+	logger.Debug(op, logger.Any("RID", ctx.Get(RID)))
 
-	invoice, err := p.tgInvoiceService.UpdateByIDChargeID(
-		context.Background(),
+	errTGMsg := "✨Пожалуйста, повторите попытку позже✨"
+
+	user, ok := ctx.Get("user").(*model.TGUser)
+	if !ok {
+		logger.OPError(op, failure.ErrContextData)
+		return ctx.Send(errTGMsg)
+	}
+	oc, ok := ctx.Get("oc").(context.Context)
+	if !ok {
+		logger.OPError(op, failure.ErrContextData)
+		return ctx.Send(errTGMsg)
+	}
+
+	err := p.tgInvoiceService.SuccessPayment(
+		oc,
 		ctx.Message().Payment.Payload,
 		ctx.Message().Payment.TelegramChargeID,
+		user,
 	)
 	if err != nil {
 		logger.OPError(op, err)
-		return err
+		return ctx.Send(errTGMsg)
 	}
 
-	user, err := p.tgUserService.UpdateQCByChatID(
-		context.Background(),
-		strconv.Itoa(int(ctx.Sender().ID)), invoice.QuestionCount,
-	)
-	if err != nil {
-		logger.OPError(op, err)
-		return err
-	}
-
-	if err = ctx.Send(fmt.Sprintf("У вас %d вопросов 🤯", user.QuestionCount)); err != nil {
-		logger.OPError(op, err)
-		return err
-	}
-
-	return nil
+	return ctx.Send(fmt.Sprintf("У вас %d вопросов 🤯", user.QuestionCount))
 }

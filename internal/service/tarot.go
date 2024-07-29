@@ -6,42 +6,54 @@ import (
 
 	"github.com/eerzho/ten_tarot/internal/failure"
 	"github.com/eerzho/ten_tarot/internal/model"
+	"github.com/eerzho/ten_tarot/pkg/logger"
 	"github.com/sashabaranov/go-openai"
 )
 
 type (
 	Tarot struct {
-		openai *openai.Client
-		model  string
-		prompt string
+		openaiClient *openai.Client
+		modelName    string
+		systemPrompt string
 	}
 )
 
-func NewTarot(model, token, prompt string) *Tarot {
+func NewTarot(modelName, apiToken, systemPrompt string) *Tarot {
 	return &Tarot{
-		openai: openai.NewClient(token),
-		model:  model,
-		prompt: prompt,
+		openaiClient: openai.NewClient(apiToken),
+		modelName:    modelName,
+		systemPrompt: systemPrompt,
 	}
 }
 
-func (t *Tarot) Oracle(ctx context.Context, question string, hand []model.Card) (string, error) {
+func (ts *Tarot) Oracle(ctx context.Context, userQuestion string, drawnCards []model.Card) (string, error) {
+	const op = "service.Tarot.Oracle"
+	logger.Debug(
+		op,
+		logger.Any("userQuestion", userQuestion),
+		logger.Any("drawnCardsCount", len(drawnCards)),
+	)
+
 	messages := []openai.ChatCompletionMessage{
-		{Role: openai.ChatMessageRoleSystem, Content: t.prompt},
+		{
+			Role:    openai.ChatMessageRoleSystem,
+			Content: ts.systemPrompt,
+		},
 		{
 			Role: openai.ChatMessageRoleUser,
-			Content: fmt.Sprintf("My question is: %s\nI drew the following %d Tarot cards: %s\nCan you provide a detailed interpretation of each card and their meanings in this context?",
-				question,
-				len(hand),
-				hand,
+			Content: fmt.Sprintf(
+				"My question is: %s\nI drew the following %d Tarot cards: %s\nCan you provide a detailed interpretation of each card and their meanings in this context?",
+				userQuestion,
+				len(drawnCards),
+				drawnCards,
 			),
 		},
 	}
 	req := openai.ChatCompletionRequest{
-		Model:    t.model,
+		Model:    ts.modelName,
 		Messages: messages,
 	}
-	resp, err := t.openai.CreateChatCompletion(ctx, req)
+	resp, err := ts.openaiClient.CreateChatCompletion(ctx, req)
 	if err != nil {
 		return "", err
 	}
