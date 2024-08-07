@@ -144,6 +144,10 @@ func (m *middleware) requestLimit(next telebot.HandlerFunc) telebot.HandlerFunc 
 			return ctx.Send(errTGMsg)
 		}
 
+		if user.State != "" {
+			return next(ctx)
+		}
+
 		monthAgo := time.Now().AddDate(0, -1, 0)
 		msgCount, err := m.tgMessageService.CountByChatIDFromTime(oc, user.ChatID, monthAgo)
 		if err != nil {

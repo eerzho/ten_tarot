@@ -111,3 +111,19 @@ func (t *TGUser) DecreaseQC(ctx context.Context, user *model.TGUser, count int) 
 
 	return nil
 }
+
+func (t *TGUser) UpdateState(ctx context.Context, user *model.TGUser, state string) error {
+	const op = "service.TGUser.UpdateState"
+	logger.Debug(
+		op,
+		logger.Any("user", user),
+		logger.Any("state", state),
+	)
+
+	user.State = state
+	if err := t.tgUserRepo.Update(ctx, user); err != nil {
+		return err
+	}
+
+	return nil
+}

@@ -40,6 +40,7 @@ func New(cfg *config.Config, mg *mongo.Mongo) (*Bot, error) {
 	tgUserRepo := mongo_repo.NewTGUser(mg)
 	tgMessageRepo := mongo_repo.NewTGMessage(mg)
 	tgInvoiceRepo := mongo_repo.NewTGInvoice(mg)
+	supportRequestRepo := mongo_repo.NewSupportRequest(mg)
 
 	// service
 	tgUserService := service.NewTGUser(tgUserRepo)
@@ -49,8 +50,9 @@ func New(cfg *config.Config, mg *mongo.Mongo) (*Bot, error) {
 	tgMessageService := service.NewTGMessage(tgMessageRepo, deckService, tarotService)
 	tgKeyboardService := service.NewTGKeyboard()
 	tgInvoiceService := service.NewTGInvoice(tgInvoiceRepo, tgUserService)
+	supportRequestService := service.NewSupportRequest(supportRequestRepo, tgUserService)
 
-	v1.NewHandler(bot, tgUserService, tgMessageService, tgKeyboardService, tgInvoiceService)
+	v1.NewHandler(bot, tgUserService, tgMessageService, tgKeyboardService, tgInvoiceService, supportRequestService)
 
 	return &Bot{
 		bot: bot,

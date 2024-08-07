@@ -10,13 +10,14 @@ func NewHandler(
 	tgMessageService tgMessageService,
 	tgKeyboardService tgKeyboardService,
 	tgInvoiceService tgInvoiceService,
+	supportRequestService supportRequestService,
 ) {
 	mv := newMiddleware(tgMessageService, tgKeyboardService, tgUserService)
 
 	bot.Use(mv.setRIDAndLogDuration, mv.setUserAndContext)
 
 	newCommand(bot, tgUserService)
-	newMessage(mv, bot, tgMessageService, tgUserService)
+	newMessage(mv, bot, tgMessageService, tgUserService, tgInvoiceService, supportRequestService)
 	newButton(bot, tgKeyboardService, tgInvoiceService)
 	newPayment(bot, tgInvoiceService, tgUserService)
 }
