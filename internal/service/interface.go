@@ -40,5 +40,10 @@ type (
 
 	tgUserService interface {
 		IncreaseQC(ctx context.Context, user *model.TGUser, count int) error
+		UpdateState(ctx context.Context, user *model.TGUser, state string) error
+	}
+
+	supportRequestRepo interface {
+		Create(ctx context.Context, supportRequest *model.SupportRequest) error
 	}
 )

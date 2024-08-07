@@ -29,10 +29,10 @@ func newButton(
 	}
 
 	bot.Handle(&telebot.Btn{
-		Unique: constant.BuyMoreQuestions,
+		Unique: constant.BuyMoreQuestionsBTN,
 	}, b.buyMoreQuestions)
 	bot.Handle(&telebot.Btn{
-		Unique: constant.SelectQuestionsCount,
+		Unique: constant.SelectQuestionsCountBTN,
 	}, b.selectQuestionsCount)
 
 	return &b

@@ -16,6 +16,7 @@ type (
 
 	tgUserService interface {
 		DecreaseQC(ctx context.Context, user *model.TGUser, count int) error
+		UpdateState(ctx context.Context, user *model.TGUser, state string) error
 		GetOrCreateByChatIDUsername(ctx context.Context, chatID, username string) (*model.TGUser, error)
 	}
 
@@ -26,7 +27,12 @@ type (
 
 	tgInvoiceService interface {
 		IsValidByID(ctx context.Context, id string) bool
-		CreateByChatIDData(ctx context.Context, chatID, data string) (*model.TGInvoice, error)
 		SuccessPayment(ctx context.Context, id, chargeID string, user *model.TGUser) error
+		CreateByChatIDData(ctx context.Context, chatID, data string) (*model.TGInvoice, error)
+		CreateByChatIDSC(ctx context.Context, chatID string, starsCount int) (*model.TGInvoice, error)
+	}
+
+	supportRequestService interface {
+		CreateByUserQuestion(ctx context.Context, user *model.TGUser, question string) (*model.SupportRequest, error)
 	}
 )

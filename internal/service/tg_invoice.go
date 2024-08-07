@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/eerzho/ten_tarot/internal/constant"
 	"github.com/eerzho/ten_tarot/internal/failure"
 	"github.com/eerzho/ten_tarot/internal/model"
 	"github.com/eerzho/ten_tarot/pkg/logger"
@@ -61,12 +62,35 @@ func (t *TGInvoice) CreateByChatIDData(ctx context.Context, chatID, data string)
 	}
 
 	invoice := model.TGInvoice{
+		Type:          constant.InvoiceBuyType,
 		ChatID:        chatID,
 		StarsCount:    stars,
 		QuestionCount: count,
 	}
 
 	if err = t.tgInvoiceRepo.Create(ctx, &invoice); err != nil {
+		return nil, err
+	}
+
+	return &invoice, nil
+}
+
+func (t *TGInvoice) CreateByChatIDSC(ctx context.Context, chatID string, starsCount int) (*model.TGInvoice, error) {
+	const op = "service.TGInvoice.CreateByChatIDSC"
+	logger.Debug(
+		op,
+		logger.Any("chatID", chatID),
+		logger.Any("starsCount", starsCount),
+	)
+
+	invoice := model.TGInvoice{
+		Type:          constant.InvoiceDonateType,
+		ChatID:        chatID,
+		StarsCount:    starsCount,
+		QuestionCount: 1,
+	}
+
+	if err := t.tgInvoiceRepo.Create(ctx, &invoice); err != nil {
 		return nil, err
 	}
 

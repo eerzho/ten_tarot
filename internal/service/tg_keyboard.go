@@ -24,7 +24,7 @@ func (t *TGKeyboard) OverLimit(ctx context.Context) [][]telebot.InlineButton {
 	buttons := [][]telebot.InlineButton{
 		{
 			telebot.InlineButton{
-				Unique: constant.BuyMoreQuestions,
+				Unique: constant.BuyMoreQuestionsBTN,
 				Text:   "Купите больше вопросов 🤩",
 			},
 		},
@@ -40,12 +40,12 @@ func (t *TGKeyboard) Prices(ctx context.Context) [][]telebot.InlineButton {
 	buttons := [][]telebot.InlineButton{
 		{
 			telebot.InlineButton{
-				Unique: constant.SelectQuestionsCount,
+				Unique: constant.SelectQuestionsCountBTN,
 				Text:   "5 вопросов - 50 ⭐️",
 				Data:   "5:50",
 			},
 			telebot.InlineButton{
-				Unique: constant.SelectQuestionsCount,
+				Unique: constant.SelectQuestionsCountBTN,
 				Text:   "10 вопросов - 85 ⭐️",
 				Data:   "10:85",
 			},
