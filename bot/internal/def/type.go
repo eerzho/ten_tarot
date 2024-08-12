@@ -1,4 +1,4 @@
-package constant
+package def
 
 type InvoiceType string
 

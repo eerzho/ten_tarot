@@ -1,43 +1,49 @@
 package handler
 
 import (
-	"bot/internal/constant"
-	"bot/internal/failure"
+	"bot/internal/def"
 	"bot/internal/model"
 	"context"
-	"gopkg.in/telebot.v3"
 	"log/slog"
+
+	"gopkg.in/telebot.v3"
 )
 
-type (
-	command struct {
-		lg            *slog.Logger
-		tgUserService tgUserService
-	}
-)
+type command struct {
+	lg           *slog.Logger
+	userSrv      userSrv
+	tgCommandSrv tgCommandSrv
+}
 
-func newCommand(bot *telebot.Bot, lg *slog.Logger, tgUserService tgUserService) *command {
+func newCommand(
+	bot *telebot.Bot,
+	lg *slog.Logger,
+	userSrv userSrv,
+	tgCommandSrv tgCommandSrv,
+) *command {
 	c := &command{
-		lg:            lg,
-		tgUserService: tgUserService,
+		lg:           lg,
+		userSrv:      userSrv,
+		tgCommandSrv: tgCommandSrv,
 	}
 
-	bot.Handle("/start", c.start)
-	bot.Handle("/donate", c.donate)
-	bot.Handle("/support", c.support)
-	bot.Handle("/cancel", c.cancel)
+	bot.Handle(def.TGStartCommand, c.start)
+	bot.Handle(def.TGDonateCommand, c.donate)
+	bot.Handle(def.TGSupportCommand, c.support)
+	bot.Handle(def.TGCancelCommand, c.cancel)
 
-	commands := []telebot.Command{
-		{Text: "/donate", Description: "Пожертвовать в развитие проекта"},
-		{Text: "/support", Description: "Связаться с разработчиком"},
-		{Text: "/cancel", Description: "Отменить активную команду"},
-	}
-
-	if err := bot.SetCommands(commands); err != nil {
-		lg.Error("handler.command", slog.String("error", err.Error()))
-	}
+	c.setCommands(bot)
 
 	return c
+}
+
+func (cmd *command) setCommands(bot *telebot.Bot) {
+	const op = "handler.command.setCommands"
+	cmd.lg.Debug(op)
+
+	if err := bot.SetCommands(cmd.tgCommandSrv.GetCommands(context.Background())); err != nil {
+		cmd.lg.Error(op, slog.String("error", err.Error()))
+	}
 }
 
 func (cmd *command) start(c telebot.Context) error {
@@ -54,19 +60,12 @@ func (cmd *command) start(c telebot.Context) error {
 func (cmd *command) donate(c telebot.Context) error {
 	const op = "handler.command.donate"
 	cmd.lg.Debug(op, slog.Any("RID", c.Get(RID)))
-	ctx := context.Background()
+	ctx := c.Get("ctx").(context.Context)
+	user := c.Get("user").(*model.User)
 
-	errTGMsg := "✨Пожалуйста, повторите попытку позже✨"
-
-	user, ok := c.Get("user").(*model.TGUser)
-	if !ok {
-		cmd.lg.Error(op, slog.String("error", failure.ErrContextData.Error()))
-		return c.Send(errTGMsg)
-	}
-
-	if err := cmd.tgUserService.UpdateState(ctx, user, constant.UserDonateState); err != nil {
+	if err := cmd.userSrv.UpdateState(ctx, user, def.UserDonateState); err != nil {
 		cmd.lg.Error(op, slog.String("error", err.Error()))
-		return c.Send(errTGMsg)
+		return c.Send("✨Пожалуйста, повторите попытку позже✨")
 	}
 
 	return c.Send("Пожалуйста, введите сумму для доната в ⭐️")
@@ -75,19 +74,12 @@ func (cmd *command) donate(c telebot.Context) error {
 func (cmd *command) support(c telebot.Context) error {
 	const op = "handler.command.support"
 	cmd.lg.Debug(op, slog.Any("RID", c.Get(RID)))
-	ctx := context.Background()
+	ctx := c.Get("ctx").(context.Context)
+	user := c.Get("user").(*model.User)
 
-	errTGMsg := "✨Пожалуйста, повторите попытку позже✨"
-
-	user, ok := c.Get("user").(*model.TGUser)
-	if !ok {
-		cmd.lg.Error(op, slog.String("error", failure.ErrContextData.Error()))
-		return c.Send(errTGMsg)
-	}
-
-	if err := cmd.tgUserService.UpdateState(ctx, user, constant.UserSupportState); err != nil {
+	if err := cmd.userSrv.UpdateState(ctx, user, def.UserSupportState); err != nil {
 		cmd.lg.Error(op, slog.String("error", err.Error()))
-		return c.Send(errTGMsg)
+		return c.Send("✨Пожалуйста, повторите попытку позже✨")
 	}
 
 	return c.Send("Пожалуйста, напишите ваш запрос 🤕")
@@ -96,19 +88,12 @@ func (cmd *command) support(c telebot.Context) error {
 func (cmd *command) cancel(c telebot.Context) error {
 	const op = "handler.command.cancel"
 	cmd.lg.Debug(op, slog.Any("RID", c.Get(RID)))
-	ctx := context.Background()
+	ctx := c.Get("ctx").(context.Context)
+	user := c.Get("user").(*model.User)
 
-	errTGMsg := "✨Пожалуйста, повторите попытку позже✨"
-
-	user, ok := c.Get("user").(*model.TGUser)
-	if !ok {
-		cmd.lg.Error(op, slog.String("error", failure.ErrContextData.Error()))
-		return c.Send(errTGMsg)
-	}
-
-	if err := cmd.tgUserService.UpdateState(ctx, user, constant.UserDefaultState); err != nil {
+	if err := cmd.userSrv.UpdateState(ctx, user, def.UserDefaultState); err != nil {
 		cmd.lg.Error(op, slog.String("error", err.Error()))
-		return c.Send(errTGMsg)
+		return c.Send("✨Пожалуйста, повторите попытку позже✨")
 	}
 
 	return c.Send("Активная команда отменена, вы можете продолжить задавать вопросы боту 🤗")

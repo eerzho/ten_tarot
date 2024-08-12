@@ -6,10 +6,10 @@ import (
 
 type (
 	Config struct {
-		Log
-		Telegram
-		Mongo
-		GPT
+		Log      Log
+		Telegram Telegram
+		Mongo    Mongo
+		GPT      GPT
 	}
 
 	Log struct {

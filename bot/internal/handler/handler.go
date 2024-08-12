@@ -3,35 +3,37 @@ package handler
 import (
 	"bot/config"
 	"bot/internal/repo/mongo_repo"
-	"bot/internal/service"
+	"bot/internal/srv"
+	"log/slog"
+
 	"go.mongodb.org/mongo-driver/mongo"
 	"gopkg.in/telebot.v3"
-	"log/slog"
 )
 
 func SetUp(bot *telebot.Bot, cfg *config.Config, mng *mongo.Database, lg *slog.Logger) {
 	// repo
-	tgUserRepo := mongo_repo.NewTGUser(lg, mng)
-	tgMessageRepo := mongo_repo.NewTGMessage(lg, mng)
-	tgInvoiceRepo := mongo_repo.NewTGInvoice(lg, mng)
+	userRepo := mongo_repo.NewUser(lg, mng)
+	invoiceRepo := mongo_repo.NewInvoice(lg, mng)
+	messageRepo := mongo_repo.NewMessage(lg, mng)
 	supportRequestRepo := mongo_repo.NewSupportRequest(lg, mng)
 
-	// service
-	deckService := service.NewDeck(lg)
-	tgKeyboardService := service.NewTGKeyboard(lg)
-	tgUserService := service.NewTGUser(lg, tgUserRepo)
-	tgInvoiceService := service.NewTGInvoice(lg, tgInvoiceRepo, tgUserService)
-	// tarotService := service.NewTarot(lg, cfg.GPT.Model, cfg.GPT.Token, cfg.GPT.Prompt)
-	tarotService := service.NewTarotMock(lg)
-	tgMessageService := service.NewTGMessage(lg, tgMessageRepo, deckService, tarotService)
-	supportRequestService := service.NewSupportRequest(lg, supportRequestRepo, tgUserService)
+	// srv
+	deckSrv := srv.NewDeck(lg)
+	userSrv := srv.NewUser(lg, userRepo)
+	tgCommandSrv := srv.NewTGCommand(lg)
+	tgKeyboardSrv := srv.NewTGKeyboard(lg)
+	invoiceSrv := srv.NewInvoice(lg, invoiceRepo, userSrv)
+	tgInvoiceSrv := srv.NewTGInvoice(lg, invoiceSrv, userSrv)
+	tarotSrv := srv.NewTarot(lg, cfg.GPT.Model, cfg.GPT.Token, cfg.GPT.Prompt)
+	supportRequestSrv := srv.NewSupportRequest(lg, supportRequestRepo, userSrv)
+	messageSrv := srv.NewMessage(lg, messageRepo, deckSrv, tarotSrv)
 
-	mdw := newMiddleware(lg, tgMessageService, tgKeyboardService, tgUserService)
+	mdw := newMiddleware(lg, userSrv, messageSrv, tgKeyboardSrv, 3)
+	bot.Use(mdw.setRIDAndLogDuration, mdw.setUserAndContext)
 
-	bot.Use(mdw.setRIDAndLogDuration, mdw.setUser)
-
-	newCommand(bot, lg, tgUserService)
-	newPayment(bot, lg, tgInvoiceService, tgUserService)
-	newButton(bot, lg, tgKeyboardService, tgInvoiceService)
-	newMessage(bot, lg, mdw, tgMessageService, tgUserService, tgInvoiceService, supportRequestService)
+	// handler
+	newPayment(bot, lg, userSrv, invoiceSrv)
+	newCommand(bot, lg, userSrv, tgCommandSrv)
+	newButton(bot, lg, tgInvoiceSrv, tgKeyboardSrv)
+	newMessage(bot, lg, mdw, userSrv, messageSrv, tgInvoiceSrv, supportRequestSrv)
 }

@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"bot/internal/failure"
 	"bot/internal/model"
 	"context"
 	"fmt"
@@ -12,22 +11,22 @@ import (
 
 type (
 	payment struct {
-		lg               *slog.Logger
-		tgInvoiceService tgInvoiceService
-		tgUserService    tgUserService
+		lg         *slog.Logger
+		userSrv    userSrv
+		invoiceSrv invoiceSrv
 	}
 )
 
 func newPayment(
 	bot *telebot.Bot,
 	lg *slog.Logger,
-	tgInvoiceService tgInvoiceService,
-	tgUserService tgUserService,
+	userSrv userSrv,
+	invoiceSrv invoiceSrv,
 ) *payment {
 	p := payment{
-		lg:               lg,
-		tgInvoiceService: tgInvoiceService,
-		tgUserService:    tgUserService,
+		lg:         lg,
+		userSrv:    userSrv,
+		invoiceSrv: invoiceSrv,
 	}
 
 	bot.Handle(telebot.OnCheckout, p.checkout)
@@ -39,17 +38,10 @@ func newPayment(
 func (p *payment) checkout(c telebot.Context) error {
 	const op = "handler.payment.checkout"
 	p.lg.Debug(op, slog.Any("RID", c.Get(RID)))
-
-	errTGMsg := "✨Пожалуйста, повторите попытку позже✨"
-
-	oc, ok := c.Get("oc").(context.Context)
-	if !ok {
-		p.lg.Error(op, slog.String("error", failure.ErrContextData.Error()))
-		return c.Send(errTGMsg)
-	}
+	ctx := c.Get("ctx").(context.Context)
 
 	preCQ := c.PreCheckoutQuery()
-	if !p.tgInvoiceService.IsValidByID(oc, preCQ.Payload) {
+	if !p.invoiceSrv.IsValidByID(ctx, preCQ.Payload) {
 		return c.Bot().Accept(preCQ, "Вы уже оплатили 🥳")
 	} else {
 		return c.Bot().Accept(preCQ)
@@ -59,17 +51,10 @@ func (p *payment) checkout(c telebot.Context) error {
 func (p *payment) payment(c telebot.Context) error {
 	const op = "handler.payment.payment"
 	p.lg.Debug(op, slog.Any("RID", c.Get(RID)))
-	ctx := context.Background()
+	ctx := c.Get("ctx").(context.Context)
+	user := c.Get("user").(*model.User)
 
-	errTGMsg := "✨Пожалуйста, повторите попытку позже✨"
-
-	user, ok := c.Get("user").(*model.TGUser)
-	if !ok {
-		p.lg.Error(op, slog.String("error", failure.ErrContextData.Error()))
-		return c.Send(errTGMsg)
-	}
-
-	err := p.tgInvoiceService.SuccessPayment(
+	err := p.invoiceSrv.UpdateChargeID(
 		ctx,
 		c.Message().Payment.Payload,
 		c.Message().Payment.TelegramChargeID,
@@ -77,7 +62,7 @@ func (p *payment) payment(c telebot.Context) error {
 	)
 	if err != nil {
 		p.lg.Error(op, slog.String("error", err.Error()))
-		return c.Send(errTGMsg)
+		return c.Send("✨Пожалуйста, повторите попытку позже✨")
 	}
 
 	return c.Send(fmt.Sprintf("У вас %d вопросов 🤯", user.QuestionCount))

@@ -1,17 +1,16 @@
-package service
+package srv
 
 import (
-	"bot/internal/constant"
+	"bot/internal/def"
 	"context"
-	"gopkg.in/telebot.v3"
 	"log/slog"
+
+	"gopkg.in/telebot.v3"
 )
 
-type (
-	TGKeyboard struct {
-		lg *slog.Logger
-	}
-)
+type TGKeyboard struct {
+	lg *slog.Logger
+}
 
 func NewTGKeyboard(lg *slog.Logger) *TGKeyboard {
 	return &TGKeyboard{
@@ -20,13 +19,13 @@ func NewTGKeyboard(lg *slog.Logger) *TGKeyboard {
 }
 
 func (t *TGKeyboard) OverLimit(ctx context.Context) [][]telebot.InlineButton {
-	const op = "service.TGKeyboard.OverLimit"
+	const op = "srv.TGKeyboard.OverLimit"
 	t.lg.Debug(op)
 
 	buttons := [][]telebot.InlineButton{
 		{
 			telebot.InlineButton{
-				Unique: constant.BuyMoreQuestionsBTN,
+				Unique: def.TGBuyMoreQuestionsButton,
 				Text:   "Купите больше вопросов 🤩",
 			},
 		},
@@ -36,18 +35,18 @@ func (t *TGKeyboard) OverLimit(ctx context.Context) [][]telebot.InlineButton {
 }
 
 func (t *TGKeyboard) Prices(ctx context.Context) [][]telebot.InlineButton {
-	const op = "service.TGKeyboard.Prices"
+	const op = "srv.TGKeyboard.Prices"
 	t.lg.Debug(op)
 
 	buttons := [][]telebot.InlineButton{
 		{
 			telebot.InlineButton{
-				Unique: constant.SelectQuestionsCountBTN,
+				Unique: def.TGSelectQuestionsCountButton,
 				Text:   "5 вопросов - 50 ⭐️",
 				Data:   "5:50",
 			},
 			telebot.InlineButton{
-				Unique: constant.SelectQuestionsCountBTN,
+				Unique: def.TGSelectQuestionsCountButton,
 				Text:   "10 вопросов - 85 ⭐️",
 				Data:   "10:85",
 			},

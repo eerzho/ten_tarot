@@ -1,8 +1,7 @@
 package handler
 
 import (
-	"bot/internal/constant"
-	"bot/internal/failure"
+	"bot/internal/def"
 	"bot/internal/model"
 	"context"
 	"log/slog"
@@ -18,27 +17,28 @@ const RID = "X-Request-ID"
 
 type middleware struct {
 	lg                *slog.Logger
-	mu                sync.Mutex
+	rwMu              sync.RWMutex
+	userSrv           userSrv
 	requestLimitCount int
 	activeRequest     map[int]struct{}
-	tgMessageService  tgMessageService
-	tgKeyboardService tgKeyboardService
-	tgUserService     tgUserService
+	messageSrv        messageSrv
+	tgKeyboardSrv     tgKeyboardSrv
 }
 
 func newMiddleware(
 	lg *slog.Logger,
-	tgMessageService tgMessageService,
-	tgKeyboardService tgKeyboardService,
-	tgUserService tgUserService,
+	userSrv userSrv,
+	messageSrv messageSrv,
+	tgKeyboardSrv tgKeyboardSrv,
+	requestLimitCount int,
 ) *middleware {
 	return &middleware{
 		lg:                lg,
-		requestLimitCount: 3,
+		userSrv:           userSrv,
+		messageSrv:        messageSrv,
+		tgKeyboardSrv:     tgKeyboardSrv,
+		requestLimitCount: requestLimitCount,
 		activeRequest:     make(map[int]struct{}),
-		tgMessageService:  tgMessageService,
-		tgKeyboardService: tgKeyboardService,
-		tgUserService:     tgUserService,
 	}
 }
 
@@ -65,21 +65,19 @@ func (m *middleware) setRIDAndLogDuration(next telebot.HandlerFunc) telebot.Hand
 	}
 }
 
-func (m *middleware) setUser(next telebot.HandlerFunc) telebot.HandlerFunc {
+func (m *middleware) setUserAndContext(next telebot.HandlerFunc) telebot.HandlerFunc {
 	return func(c telebot.Context) error {
 		const op = "handler.middleware.setUser"
 		m.lg.Debug(op, slog.Any("RID", c.Get(RID)))
+
 		ctx := context.Background()
+		c.Set("ctx", ctx)
 
-		username := c.Sender().Username
-		chatID := strconv.Itoa(int(c.Sender().ID))
-
-		user, err := m.tgUserService.GetOrCreateByChatIDUsername(ctx, chatID, username)
+		user, err := m.userSrv.GetOrCreateByChatIDAndUsername(ctx, strconv.Itoa(int(c.Sender().ID)), c.Sender().Username)
 		if err != nil {
 			m.lg.Error(op, slog.String("error", err.Error()))
 			return c.Send("Что-то пошло не так, напишите @eerzho")
 		}
-
 		c.Set("user", user)
 
 		return next(c)
@@ -95,35 +93,30 @@ func (m *middleware) spamLimit(next telebot.HandlerFunc) telebot.HandlerFunc {
 		isActive := m.isActiveRequest(chatID)
 
 		if isActive {
-			return c.Send(
-				"✨Пожалуйста, подождите✨",
-				&telebot.SendOptions{ReplyTo: c.Message()},
-			)
+			return c.Send("✨Пожалуйста, подождите✨", &telebot.SendOptions{ReplyTo: c.Message()})
 		} else {
 			m.setActiveRequest(chatID)
-			defer func() {
-				m.delActiveRequest(chatID)
-			}()
+			defer m.delActiveRequest(chatID)
 			return next(c)
 		}
 	}
 }
 
 func (m *middleware) setActiveRequest(chatID int) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.rwMu.Lock()
+	defer m.rwMu.Unlock()
 	m.activeRequest[chatID] = struct{}{}
 }
 
 func (m *middleware) delActiveRequest(chatID int) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.rwMu.Lock()
+	defer m.rwMu.Unlock()
 	delete(m.activeRequest, chatID)
 }
 
 func (m *middleware) isActiveRequest(chatID int) bool {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.rwMu.RLock()
+	defer m.rwMu.RUnlock()
 	_, ok := m.activeRequest[chatID]
 
 	return ok
@@ -133,25 +126,18 @@ func (m *middleware) requestLimit(next telebot.HandlerFunc) telebot.HandlerFunc 
 	return func(c telebot.Context) error {
 		const op = "handler.middleware.requestLimit"
 		m.lg.Debug(op, slog.Any("RID", c.Get(RID)))
-		ctx := context.Background()
+		ctx := c.Get("ctx").(context.Context)
+		user := c.Get("user").(*model.User)
 
-		errTGMsg := "✨Пожалуйста, повторите попытку позже✨"
-
-		user, ok := c.Get("user").(*model.TGUser)
-		if !ok {
-			m.lg.Error(op, slog.String("error", failure.ErrContextData.Error()))
-			return c.Send(errTGMsg)
-		}
-
-		if user.State != constant.UserDefaultState {
+		if user.State != def.UserDefaultState {
 			return next(c)
 		}
 
 		monthAgo := time.Now().AddDate(0, -1, 0)
-		msgCount, err := m.tgMessageService.CountByChatIDFromTime(ctx, user.ChatID, monthAgo)
+		msgCount, err := m.messageSrv.CountByChatIDAndFromTime(ctx, user.ChatID, monthAgo)
 		if err != nil {
 			m.lg.Error(op, slog.String("error", err.Error()))
-			return c.Send(errTGMsg)
+			return c.Send("✨Пожалуйста, повторите попытку позже✨")
 		}
 
 		if msgCount < m.requestLimitCount {
@@ -163,17 +149,18 @@ func (m *middleware) requestLimit(next telebot.HandlerFunc) telebot.HandlerFunc 
 			if err != nil {
 				return err
 			}
-			err = m.tgUserService.DecreaseQC(ctx, user, 1)
+
+			err = m.userSrv.DecreaseQuestionCount(ctx, user, 1)
 			if err != nil {
 				m.lg.Error(op, slog.String("error", err.Error()))
-				return c.Send(errTGMsg)
+				return c.Send("✨Пожалуйста, повторите попытку позже✨")
 			}
+
 			return nil
 		} else {
-			opt := telebot.ReplyMarkup{
-				InlineKeyboard: m.tgKeyboardService.OverLimit(ctx),
-			}
-			return c.Send("✨Вы превысили лимит✨", &opt)
+			return c.Send("✨Вы превысили лимит✨", &telebot.ReplyMarkup{
+				InlineKeyboard: m.tgKeyboardSrv.OverLimit(ctx),
+			})
 		}
 	}
 }

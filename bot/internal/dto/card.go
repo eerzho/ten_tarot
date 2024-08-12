@@ -1,4 +1,4 @@
-package model
+package dto
 
 type Card struct {
 	Suit  string `json:"suit"`

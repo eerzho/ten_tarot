@@ -1,22 +1,21 @@
-package service
+package srv
 
 import (
-	"bot/internal/failure"
-	"bot/internal/model"
+	"bot/internal/def"
+	"bot/internal/dto"
 	"context"
 	"fmt"
-	"github.com/sashabaranov/go-openai"
 	"log/slog"
+
+	"github.com/sashabaranov/go-openai"
 )
 
-type (
-	Tarot struct {
-		lg           *slog.Logger
-		openAIClient *openai.Client
-		modelName    string
-		systemPrompt string
-	}
-)
+type Tarot struct {
+	lg           *slog.Logger
+	openAIClient *openai.Client
+	modelName    string
+	systemPrompt string
+}
 
 func NewTarot(lg *slog.Logger, modelName, apiToken, systemPrompt string) *Tarot {
 	return &Tarot{
@@ -27,8 +26,8 @@ func NewTarot(lg *slog.Logger, modelName, apiToken, systemPrompt string) *Tarot 
 	}
 }
 
-func (t *Tarot) Oracle(ctx context.Context, userQuestion string, drawnCards []model.Card) (string, error) {
-	const op = "service.Tarot.Oracle"
+func (t *Tarot) Oracle(ctx context.Context, userQuestion string, drawnCards []dto.Card) (string, error) {
+	const op = "srv.Tarot.Oracle"
 	t.lg.Debug(
 		op,
 		slog.String("userQuestion", userQuestion),
@@ -60,7 +59,7 @@ func (t *Tarot) Oracle(ctx context.Context, userQuestion string, drawnCards []mo
 	}
 
 	if len(resp.Choices) < 1 {
-		return "", failure.ErrChoicesIsEmpty
+		return "", def.ErrChoicesIsEmpty
 	}
 
 	return resp.Choices[0].Message.Content, nil

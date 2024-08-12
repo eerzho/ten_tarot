@@ -1,7 +1,7 @@
-package service
+package srv
 
 import (
-	"bot/internal/constant"
+	"bot/internal/def"
 	"bot/internal/model"
 	"context"
 	"log/slog"
@@ -10,23 +10,23 @@ import (
 type SupportRequest struct {
 	lg                 *slog.Logger
 	supportRequestRepo supportRequestRepo
-	tgUserService      tgUserService
+	userSrv            userSrv
 }
 
 func NewSupportRequest(
 	lg *slog.Logger,
 	supportRequestRepo supportRequestRepo,
-	tgUserService tgUserService,
+	userSrv userSrv,
 ) *SupportRequest {
 	return &SupportRequest{
 		lg:                 lg,
 		supportRequestRepo: supportRequestRepo,
-		tgUserService:      tgUserService,
+		userSrv:            userSrv,
 	}
 }
 
-func (s *SupportRequest) CreateByUserQuestion(ctx context.Context, user *model.TGUser, question string) (*model.SupportRequest, error) {
-	const op = "service.SupportRequest.CreateByQuestion"
+func (s *SupportRequest) CreateByUserQuestion(ctx context.Context, user *model.User, question string) (*model.SupportRequest, error) {
+	const op = "srv.SupportRequest.CreateByUserQuestion"
 	s.lg.Debug(
 		op,
 		slog.Any("user", user),
@@ -42,7 +42,7 @@ func (s *SupportRequest) CreateByUserQuestion(ctx context.Context, user *model.T
 		return nil, err
 	}
 
-	if err := s.tgUserService.UpdateState(ctx, user, constant.UserDefaultState); err != nil {
+	if err := s.userSrv.UpdateState(ctx, user, def.UserDefaultState); err != nil {
 		return nil, err
 	}
 

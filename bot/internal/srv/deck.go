@@ -1,20 +1,18 @@
-package service
+package srv
 
 import (
-	"bot/internal/model"
+	"bot/internal/dto"
 	"context"
 	"log/slog"
 	"math/rand"
 	"strconv"
 )
 
-type (
-	Deck struct {
-		lg         *slog.Logger
-		totalCards int
-		cards      []model.Card
-	}
-)
+type Deck struct {
+	lg         *slog.Logger
+	totalCards int
+	cards      []dto.Card
+}
 
 func NewDeck(lg *slog.Logger) *Deck {
 	deck := Deck{lg: lg}
@@ -26,7 +24,7 @@ func NewDeck(lg *slog.Logger) *Deck {
 		for _, value := range values {
 			deck.cards = append(
 				deck.cards,
-				model.Card{Suit: suit, Value: value},
+				dto.Card{Suit: suit, Value: value},
 			)
 		}
 	}
@@ -34,7 +32,7 @@ func NewDeck(lg *slog.Logger) *Deck {
 	for i := 1; i <= 22; i++ {
 		deck.cards = append(
 			deck.cards,
-			model.Card{Suit: "Major Arcana", Value: strconv.Itoa(i)},
+			dto.Card{Suit: "Major Arcana", Value: strconv.Itoa(i)},
 		)
 	}
 
@@ -43,8 +41,8 @@ func NewDeck(lg *slog.Logger) *Deck {
 	return &deck
 }
 
-func (d *Deck) Shuffle(ctx context.Context, count int) ([]model.Card, error) {
-	const op = "service.Deck.Shuffle"
+func (d *Deck) Shuffle(ctx context.Context, count int) ([]dto.Card, error) {
+	const op = "srv.Deck.Shuffle"
 	d.lg.Debug(op, slog.Int("count", count))
 
 	if count <= 0 {
@@ -59,7 +57,7 @@ func (d *Deck) Shuffle(ctx context.Context, count int) ([]model.Card, error) {
 		indices[i] = i
 	}
 
-	shuffledDeck := make([]model.Card, count)
+	shuffledDeck := make([]dto.Card, count)
 
 	for i := 0; i < count; i++ {
 		select {

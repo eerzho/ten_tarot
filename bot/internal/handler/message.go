@@ -1,22 +1,22 @@
 package handler
 
 import (
-	"bot/internal/constant"
-	"bot/internal/failure"
+	"bot/internal/def"
 	"bot/internal/model"
 	"context"
-	"gopkg.in/telebot.v3"
+	"errors"
 	"log/slog"
-	"strconv"
+
+	"gopkg.in/telebot.v3"
 )
 
 type (
 	message struct {
-		lg                    *slog.Logger
-		tgMessageService      tgMessageService
-		tgUserService         tgUserService
-		tgInvoiceService      tgInvoiceService
-		supportRequestService supportRequestService
+		lg                *slog.Logger
+		userSrv           userSrv
+		messageSrv        messageSrv
+		tgInvoiceSrv      tgInvoiceSrv
+		supportRequestSrv supportRequestSrv
 	}
 )
 
@@ -24,17 +24,17 @@ func newMessage(
 	bot *telebot.Bot,
 	lg *slog.Logger,
 	mdw *middleware,
-	tgMessageService tgMessageService,
-	tgUserService tgUserService,
-	tgInvoiceService tgInvoiceService,
-	supportRequestService supportRequestService,
+	userSrv userSrv,
+	messageSrv messageSrv,
+	tgInvoiceSrv tgInvoiceSrv,
+	supportRequestSrv supportRequestSrv,
 ) *message {
 	m := &message{
-		lg:                    lg,
-		tgMessageService:      tgMessageService,
-		tgUserService:         tgUserService,
-		tgInvoiceService:      tgInvoiceService,
-		supportRequestService: supportRequestService,
+		lg:                lg,
+		userSrv:           userSrv,
+		messageSrv:        messageSrv,
+		tgInvoiceSrv:      tgInvoiceSrv,
+		supportRequestSrv: supportRequestSrv,
 	}
 
 	bot.Handle(telebot.OnText, m.text, mdw.spamLimit, mdw.requestLimit)
@@ -45,70 +45,47 @@ func newMessage(
 func (m *message) text(c telebot.Context) error {
 	const op = "handler.message.text"
 	m.lg.Debug(op, slog.Any("RID", c.Get(RID)))
-	ctx := context.Background()
-
-	errTGMsg := "✨Пожалуйста, повторите попытку позже✨"
-
-	user, ok := c.Get("user").(*model.TGUser)
-	if !ok {
-		m.lg.Error(op, slog.String("error", failure.ErrContextData.Error()))
-		return c.Send(errTGMsg)
-	}
+	ctx := c.Get("ctx").(context.Context)
+	user := c.Get("user").(*model.User)
 
 	switch user.State {
-	case constant.UserDonateState:
+	case def.UserDonateState:
 		return m.generateInvoice(c, ctx, user)
-	case constant.UserSupportState:
+	case def.UserSupportState:
 		return m.saveRequest(c, ctx, user)
 	default:
-		return m.generateAnswer(c, ctx)
+		return m.generateAnswer(c, ctx, user)
 	}
 }
 
-func (m *message) generateInvoice(c telebot.Context, ctx context.Context, user *model.TGUser) error {
+func (m *message) generateInvoice(c telebot.Context, ctx context.Context, user *model.User) error {
 	const op = "handler.message.generateInvoice"
-	m.lg.Debug(op, slog.Any("RID", c.Get(RID)))
+	m.lg.Debug(
+		op,
+		slog.Any("user", user),
+	)
 
-	starsCount, err := strconv.Atoi(c.Message().Text)
+	tgInvoice, err := m.tgInvoiceSrv.CreateDonateInvoice(ctx, user, c.Message().Text)
 	if err != nil {
-		m.lg.Warn(op, slog.String("error", err.Error()))
-		return c.Send("Пожалуйста, введите только цифру 0️⃣-9️⃣")
-	}
-
-	chatID := strconv.Itoa(int(c.Sender().ID))
-
-	tgInvoice, err := m.tgInvoiceService.CreateByChatIDSC(ctx, chatID, starsCount)
-	if err != nil {
-		m.lg.Error(op, slog.String("error", err.Error()))
-		return err
-	}
-
-	invoice := telebot.Invoice{
-		Title:       "Благодарим за поддержку!",
-		Description: "Ваш вклад поможет развивать проект и продвигать его дальше!",
-		Payload:     tgInvoice.ID,
-		Currency:    "XTR",
-		Prices: []telebot.Price{
-			{
-				Label:  "Поддержка проекта",
-				Amount: tgInvoice.StarsCount,
-			},
-		},
-	}
-
-	if err = m.tgUserService.UpdateState(ctx, user, constant.UserDefaultState); err != nil {
+		if errors.Is(err, def.ErrInvalidType) {
+			m.lg.Warn(op, slog.String("error", err.Error()))
+			return c.Send("Пожалуйста, введите только цифру 0️⃣-9️⃣")
+		}
 		m.lg.Error(op, slog.String("error", err.Error()))
 		return c.Send("✨Пожалуйста, повторите попытку позже✨")
 	}
 
-	return c.Send(&invoice)
+	return c.Send(tgInvoice)
 }
 
-func (m *message) saveRequest(c telebot.Context, ctx context.Context, user *model.TGUser) error {
+func (m *message) saveRequest(c telebot.Context, ctx context.Context, user *model.User) error {
 	const op = "handler.message.saveRequest"
-	m.lg.Debug(op, slog.Any("RID", c.Get(RID)))
+	m.lg.Debug(
+		op,
+		slog.Any("user", user),
+	)
 
-	if _, err := m.supportRequestService.CreateByUserQuestion(ctx, user, c.Message().Text); err != nil {
+	if _, err := m.supportRequestSrv.CreateByUserQuestion(ctx, user, c.Message().Text); err != nil {
 		m.lg.Error(op, slog.String("error", err.Error()))
 		return c.Send("✨Пожалуйста, повторите попытку позже✨")
 	}
@@ -116,29 +93,31 @@ func (m *message) saveRequest(c telebot.Context, ctx context.Context, user *mode
 	return c.Send("Спасибо за ваш запрос 😁")
 }
 
-func (m *message) generateAnswer(c telebot.Context, ctx context.Context) error {
+func (m *message) generateAnswer(c telebot.Context, ctx context.Context, user *model.User) error {
 	const op = "handler.message.generateAnswer"
-	m.lg.Debug(op, slog.Any("RID", c.Get(RID)))
+	m.lg.Debug(
+		op,
+		slog.Any("user", user),
+	)
 
-	chatID := strconv.Itoa(int(c.Sender().ID))
 	opt := telebot.SendOptions{
 		ReplyTo: c.Message(),
 	}
 
-	waitMsg, err := c.Bot().Send(c.Sender(), "✨Пожалуйста, подождите✨", &opt)
+	waitTGMsg, err := c.Bot().Send(c.Sender(), "✨Пожалуйста, подождите✨", &opt)
 	if err != nil {
 		m.lg.Warn(op, slog.String("error", err.Error()))
 	}
 
-	tgMsg, err := m.tgMessageService.CreateByChatIDUQ(ctx, chatID, c.Message().Text)
+	msg, err := m.messageSrv.CreateByChatIDAndUserQuestion(ctx, user.ChatID, c.Message().Text)
 	if err != nil {
 		m.lg.Error(op, slog.String("error", err.Error()))
 		return c.Send("✨Пожалуйста, повторите попытку позже✨")
 	}
 
-	if err = c.Bot().Delete(waitMsg); err != nil {
+	if err = c.Bot().Delete(waitTGMsg); err != nil {
 		m.lg.Warn(op, slog.String("error", err.Error()))
 	}
 
-	return c.Send(tgMsg.BotAnswer, &opt)
+	return c.Send(msg.BotAnswer, &opt)
 }

@@ -1,7 +1,7 @@
-package service
+package srv
 
 import (
-	"bot/internal/model"
+	"bot/internal/dto"
 	"context"
 	"log/slog"
 )
@@ -16,8 +16,8 @@ func NewTarotMock(lg *slog.Logger) *TarotMock {
 	}
 }
 
-func (t *TarotMock) Oracle(ctx context.Context, userQuestion string, drawnCards []model.Card) (string, error) {
-	const op = "service.TarotMock.Oracle"
+func (t *TarotMock) Oracle(ctx context.Context, userQuestion string, drawnCards []dto.Card) (string, error) {
+	const op = "srv.TarotMock.Oracle"
 	t.lg.Debug(
 		op,
 		slog.String("userQuestion", userQuestion),
