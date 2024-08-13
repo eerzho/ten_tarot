@@ -1,12 +1,5 @@
-version: '3.8'
-
 services:
-  ten_tarot_bot:
+  bot:
     build:
-      context: .
-      dockerfile: docker/telegram_bot/Dockerfile.prod
-
-  ten_tarot_server:
-    build:
-      context: .
-      dockerfile: docker/http_server/Dockerfile.prod
+      context: ./bot
+      dockerfile: ./docker/Dockerfile.prod

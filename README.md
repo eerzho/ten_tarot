@@ -1,22 +1,21 @@
-# Project Setup and Launch Instructions
+# Project Setup Instructions
 
-## Prerequisites
+## Environment Setup
 
-1. Create a `.env` file based on the example provided in `.env.example`.
-2. Download and install [ngrok](https://ngrok.com/).
-3. Run `ngrok http TELEGRAM_PORT` and add the resulting URL to your `.env` file under the key `TELEGRAM_DOMAIN`.
+1. First, create a `.env` file in the project root directory using `.env.example` as a template. You can copy the contents of `.env.example` into `.env` and modify the variable values as needed.
 
-## Launch with Docker Compose
+## Building and Starting the Project
 
-1. Build the bot:
+1. Run the following command to build the containers:
+
    ```bash
    make build
    ```
 
-2. Start the bot:
+2. After the build is successful, start the containers with:
+
    ```bash
-   make start
+   make up
    ```
 
-   The HTTP server will be running on the port specified by `HTTP_PORT`, and the Telegram bot will be running on the
-   port specified by `TELEGRAM_PORT`.
+After completing these steps, your project should be ready to use.
