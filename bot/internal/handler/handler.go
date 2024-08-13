@@ -25,6 +25,7 @@ func SetUp(bot *telebot.Bot, cfg *config.Config, mng *mongo.Database, lg *slog.L
 	invoiceSrv := srv.NewInvoice(lg, invoiceRepo, userSrv)
 	tgInvoiceSrv := srv.NewTGInvoice(lg, invoiceSrv, userSrv)
 	tarotSrv := srv.NewTarot(lg, cfg.GPT.Model, cfg.GPT.Token, cfg.GPT.Prompt)
+	// tarotSrv := srv.NewTarotMock(lg)
 	supportRequestSrv := srv.NewSupportRequest(lg, supportRequestRepo, userSrv)
 	messageSrv := srv.NewMessage(lg, messageRepo, deckSrv, tarotSrv)
 

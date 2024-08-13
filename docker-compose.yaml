@@ -6,8 +6,6 @@ services:
     container_name: ${PROJECT_NAME}_bot
     env_file:
       - .env
-    ports:
-      - "${TELEGRAM_PORT}:${TELEGRAM_PORT}"
     volumes:
       - ./bot:/bot
     networks:

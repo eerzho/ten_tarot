@@ -3,25 +3,23 @@ package app
 import (
 	"bot/config"
 	"bot/internal/handler"
-	"go.mongodb.org/mongo-driver/mongo"
-	"gopkg.in/telebot.v3"
 	"log"
 	"log/slog"
+	"time"
+
+	"go.mongodb.org/mongo-driver/mongo"
+	"gopkg.in/telebot.v3"
 )
 
 type App struct {
-	url string
 	bot *telebot.Bot
 }
 
 func New(cfg *config.Config, mng *mongo.Database, lg *slog.Logger) (*App, error) {
 	settings := telebot.Settings{
 		Token: cfg.Telegram.Token,
-		Poller: &telebot.Webhook{
-			Listen: ":" + cfg.Telegram.Port,
-			Endpoint: &telebot.WebhookEndpoint{
-				PublicURL: cfg.Telegram.Domain,
-			},
+		Poller: &telebot.LongPoller{
+			Timeout: 10 * time.Second,
 		},
 		OnError: nil,
 	}
@@ -33,22 +31,17 @@ func New(cfg *config.Config, mng *mongo.Database, lg *slog.Logger) (*App, error)
 
 	handler.SetUp(bot, cfg, mng, lg)
 
-	return &App{
-		bot: bot,
-		url: cfg.Telegram.Domain,
-	}, nil
+	return &App{bot: bot}, nil
 }
 
 func (a *App) Run() {
-	log.Printf("app: bot listening at %s", a.url)
+	log.Println("app: bot started with long polling")
+	if err := a.bot.RemoveWebhook(); err != nil {
+		log.Fatalf("app: %v", err)
+	}
 	a.bot.Start()
 }
 
 func (a *App) Shutdown() {
-	log.Print("app: bot shutting down")
-
-	err := a.bot.RemoveWebhook()
-	if err != nil {
-		log.Printf("app: %v", err)
-	}
+	log.Println("app: bot shutting down")
 }

@@ -18,8 +18,6 @@ type (
 	}
 
 	Telegram struct {
-		Port   string `env:"TELEGRAM_PORT" env-default:"80"`
-		Domain string `env:"TELEGRAM_DOMAIN" env-required:"true"`
 		Token  string `env:"TELEGRAM_TOKEN" env-required:"true" `
 	}
 

@@ -33,6 +33,7 @@ func (i *Invoice) GetByID(ctx context.Context, id string) (*model.Invoice, error
 
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
+		i.lg.Warn(op, slog.String("error", err.Error()))
 		return nil, def.ErrNotFound
 	}
 

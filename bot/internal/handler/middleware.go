@@ -19,10 +19,10 @@ type middleware struct {
 	lg                *slog.Logger
 	rwMu              sync.RWMutex
 	userSrv           userSrv
-	requestLimitCount int
-	activeRequest     map[int]struct{}
 	messageSrv        messageSrv
 	tgKeyboardSrv     tgKeyboardSrv
+	requestLimitCount int
+	activeRequest     map[int]struct{}
 }
 
 func newMiddleware(

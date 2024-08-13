@@ -33,6 +33,7 @@ func (i *Invoice) IsValidByID(ctx context.Context, id string) bool {
 
 	invoice, err := i.invoiceRepo.GetByID(ctx, id)
 	if err != nil {
+		i.lg.Warn(op, slog.String("error", err.Error()))
 		return false
 	}
 

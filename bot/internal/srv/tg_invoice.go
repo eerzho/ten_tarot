@@ -45,7 +45,7 @@ func (ti *TGInvoice) CreateBuyInvoice(ctx context.Context, chatID, data string) 
 	tgInvoice := telebot.Invoice{
 		Title:       fmt.Sprintf("%d - вопросов", invoice.QuestionCount),
 		Description: fmt.Sprintf("Вы сможете задать еще %d вопросов", invoice.QuestionCount),
-		Payload:     invoice.ID.String(),
+		Payload:     invoice.ID.Hex(),
 		Currency:    "XTR",
 		Prices: []telebot.Price{
 			{
@@ -79,7 +79,7 @@ func (ti *TGInvoice) CreateDonateInvoice(ctx context.Context, user *model.User, 
 	tgInvoice := telebot.Invoice{
 		Title:       "Благодарим за поддержку!",
 		Description: "Ваш вклад поможет развивать проект и продвигать его дальше!",
-		Payload:     invoice.ID.String(),
+		Payload:     invoice.ID.Hex(),
 		Currency:    "XTR",
 		Prices: []telebot.Price{
 			{
