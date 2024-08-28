@@ -18,7 +18,7 @@ import (
 func main() {
 	cfg, err := config.New()
 	if err != nil {
-		log.Fatalf("config: %v", err)
+		log.Fatalf("config test: %v", err)
 	}
 
 	mng, err := connectMongo(cfg.Mongo.URL, cfg.Mongo.DB)
